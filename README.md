@@ -1,4 +1,4 @@
-# AI-Based-Workforce-Productivity-Wellbeing-AnalyticsProblem Statement:
+# AI-Based-Workforce-Productivity-Wellbeing-Analytics:
 Healthcare and public sector organizations across Denmark, Norway, Sweden,
 and Finland are facing staff shortages, burnout, and low morale due to
 increased service demands and aging populations.
