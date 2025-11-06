@@ -1,48 +1,42 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 * {
-  @apply antialiased;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
+  background-color: #fafafa;
+  color: rgba(0, 0, 0, 0.87);
+  margin: 0;
+  padding: 0;
 }
 
 html {
   scroll-behavior: smooth;
 }
 
-body {
-  @apply bg-cream-50 text-gray-800 font-sans;
-}
-
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 12px;
+  height: 12px;
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-cream-100;
+  background: #f5f5f5;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-cream-400 rounded;
+  background: #bdbdbd;
+  border-radius: 6px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-cream-600;
+  background: #9e9e9e;
 }
 
-/* Custom utilities */
-@layer components {
-  .card-cream {
-    @apply bg-white border border-cream-200 shadow-sm hover:shadow-md transition-shadow;
-  }
-
-  .text-serif {
-    @apply font-serif;
-  }
-
-  .btn-primary {
-    @apply px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-opacity-90 transition;
-  }
-}

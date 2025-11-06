@@ -1,62 +1,76 @@
-import { AlertCircle, TrendingUp, Users, CheckCircle } from 'lucide-react';
-import StatCard from '../components/StatCard';
-import BurnoutChart from '../components/BurnoutChart';
+import { Container, Card, CardContent, CardHeader, Box, Typography, List, ListItem, ListItemIcon, ListItemText, Chip, Toolbar, Divider, Avatar } from '@mui/material'
+import { Warning, TrendingUp, People, CheckCircle, ErrorOutline } from '@mui/icons-material'
+import StatCard from '../components/StatCard'
+import BurnoutChart from '../components/BurnoutChart'
+
+const atRiskEmployees = [
+  { id: 1, name: 'John Smith', risk: 'High', score: 3.5 },
+  { id: 2, name: 'Sarah Johnson', risk: 'Medium', score: 5.2 },
+  { id: 3, name: 'Mike Davis', risk: 'High', score: 4.1 },
+]
 
 export default function SupervisorView() {
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-serif font-bold text-primary">Dashboard</h1>
-        <p className="text-secondary text-sm mt-1">Team Overview & Analytics</p>
-      </div>
+    <Box sx={{ flex: 1, overflow: 'auto', bgcolor: 'background.default', pt: { xs: 8, sm: 0 } }}>
+      <Toolbar sx={{ bgcolor: 'background.paper', boxShadow: 1, mb: 3 }}>
+        <Box sx={{ flex: 1 }}>
+          <Typography variant="h4" sx={{ fontWeight: 700 }}>Dashboard</Typography>
+          <Typography variant="caption" color="textSecondary">Team Overview</Typography>
+        </Box>
+      </Toolbar>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatCard
-          title="Team Members"
-          value={24}
-          icon={<Users className="text-primary" size={24} />}
-          bgColor="bg-cream-50"
-        />
-        <StatCard
-          title="High Risk"
-          value={3}
-          icon={<AlertCircle className="text-primary" size={24} />}
-          bgColor="bg-cream-50"
-        />
-        <StatCard
-          title="Medium Risk"
-          value={5}
-          icon={<TrendingUp className="text-primary" size={24} />}
-          bgColor="bg-cream-50"
-        />
-        <StatCard
-          title="Wellbeing"
-          value={7.8}
-          icon={<CheckCircle className="text-primary" size={24} />}
-          bgColor="bg-cream-50"
-          isScore
-        />
-      </div>
+      <Container maxWidth="lg" sx={{ pb: 4 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(4, 1fr)' }, gap: 2, mb: 3 }}>
+          <StatCard title="Team Members" value={24} icon={<People />} bgColor="primary" trend={5} />
+          <StatCard title="High Risk" value={3} icon={<Warning sx={{ color: 'error.main' }} />} bgColor="error" trend={-2} />
+          <StatCard title="Medium Risk" value={5} icon={<TrendingUp sx={{ color: 'warning.main' }} />} bgColor="warning" trend={1} />
+          <StatCard title="Avg Wellbeing" value={7.8} icon={<CheckCircle sx={{ color: 'success.main' }} />} bgColor="success" isScore trend={3} />
+        </Box>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white border border-cream-200 rounded-xl shadow-sm p-6">
-          <h2 className="text-lg font-serif font-bold text-primary mb-4">Burnout Trend</h2>
-          <BurnoutChart />
-        </div>
-        <div className="bg-white border border-cream-200 rounded-xl shadow-sm p-6">
-          <h2 className="text-lg font-serif font-bold text-primary mb-4">At Risk</h2>
-          <div className="space-y-3">
-            <div className="p-4 border border-cream-200 rounded-lg hover:bg-cream-50 transition">
-              <p className="font-medium text-primary text-sm">John Smith</p>
-              <p className="text-xs text-secondary mt-1">High risk • Immediate attention needed</p>
-            </div>
-            <div className="p-4 border border-cream-200 rounded-lg hover:bg-cream-50 transition">
-              <p className="font-medium text-primary text-sm">Sarah Johnson</p>
-              <p className="text-xs text-secondary mt-1">Medium risk • Monitor closely</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '2fr 1fr' }, gap: 3 }}>
+          <Card sx={{ height: '100%' }}>
+            <CardHeader title="Burnout Trend" subheader="Last 30 days" />
+            <Divider />
+            <CardContent sx={{ pt: 3 }}>
+              <BurnoutChart />
+            </CardContent>
+          </Card>
+          
+          <Card sx={{ height: '100%' }}>
+            <CardHeader 
+              title="At Risk Employees" 
+              avatar={<ErrorOutline sx={{ color: 'error.main' }} />}
+            />
+            <Divider />
+            <CardContent sx={{ p: 0 }}>
+              <List sx={{ width: '100%' }}>
+                {atRiskEmployees.map((employee, index) => (
+                  <Box key={employee.id}>
+                    <ListItem sx={{ px: 2, py: 1.5 }}>
+                      <ListItemIcon sx={{ minWidth: 40 }}>
+                        <Avatar sx={{ width: 32, height: 32, bgcolor: employee.risk === 'High' ? 'error.main' : 'warning.main' }}>
+                          {employee.name.charAt(0)}
+                        </Avatar>
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={employee.name}
+                        secondary={`Score: ${employee.score}/10`}
+                      />
+                      <Chip 
+                        label={employee.risk} 
+                        size="small"
+                        color={employee.risk === 'High' ? 'error' : 'warning'}
+                        variant="outlined"
+                      />
+                    </ListItem>
+                    {index < atRiskEmployees.length - 1 && <Divider />}
+                  </Box>
+                ))}
+              </List>
+            </CardContent>
+          </Card>
+        </Box>
+      </Container>
+    </Box>
+  )
 }

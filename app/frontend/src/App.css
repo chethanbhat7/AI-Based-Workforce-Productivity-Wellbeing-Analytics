@@ -1,57 +1,101 @@
-/* Global animations */
+/* Material UI Global Styles */
+
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 1.5;
+  color: rgba(0, 0, 0, 0.87);
+  background-color: #fafafa;
+}
+
+/* Typography Scale */
+h1 {
+  font-size: 32px;
+  font-weight: 300;
+  letter-spacing: -0.015625em;
+}
+
+h2 {
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: 0.0125em;
+}
+
+h3 {
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 0.0125em;
+}
+
+/* Material Colors */
+:root {
+  --primary: #1976d2;
+  --primary-light: #42a5f5;
+  --primary-dark: #1565c0;
+  --secondary: #dc004e;
+  --secondary-light: #f73378;
+  --secondary-dark: #9a0036;
+  --success: #4caf50;
+  --warning: #ff9800;
+  --error: #f44336;
+  --info: #2196f3;
+  --grey-50: #fafafa;
+  --grey-100: #f5f5f5;
+  --grey-200: #eeeeee;
+  --grey-300: #e0e0e0;
+  --grey-400: #bdbdbd;
+  --grey-500: #9e9e9e;
+  --grey-600: #757575;
+  --grey-700: #616161;
+  --grey-800: #424242;
+  --grey-900: #212121;
+}
+
+/* Animations */
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(10px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
-@keyframes slideInLeft {
+@keyframes slideUp {
   from {
+    transform: translateY(10px);
     opacity: 0;
-    transform: translateX(-20px);
   }
   to {
+    transform: translateY(0);
     opacity: 1;
-    transform: translateX(0);
   }
 }
 
-/* Apply animations */
 main {
-  animation: fadeIn 0.5s ease-out;
-}
-
-/* Smooth transitions */
-* {
-  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
-}
-
-/* Design system colors - Cream aesthetic */
-:root {
-  --cream-50: #fefdf9;
-  --cream-100: #fefcf3;
-  --cream-200: #fef9e7;
-  --cream-300: #fef5db;
-  --cream-400: #fef0c3;
-  --primary: #8b7355;
-  --secondary: #d4a574;
-}
-
-/* Custom scrollbar */
-::-webkit-scrollbar-track {
-  background: var(--cream-100);
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--secondary);
-  border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--primary);
+  animation: fadeIn 0.3s ease-in-out;
 }

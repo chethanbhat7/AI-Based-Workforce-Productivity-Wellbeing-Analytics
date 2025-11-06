@@ -1,6 +1,20 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { 
+  Box, 
+  Container, 
+  Card, 
+  TextField, 
+  Button, 
+  Typography, 
+  Alert, 
+  CircularProgress, 
+  Paper,
+  Stack,
+  Divider
+} from '@mui/material';
+import { Work } from '@mui/icons-material';
 
 export const Login = () => {
   const [email, setEmail] = useState('');
@@ -42,103 +56,195 @@ export const Login = () => {
   };
 
   return (
-    <div style={{ backgroundColor: '#fefcf3' }} className="min-h-screen flex items-center justify-center p-4">
-      <div className="w-full max-w-sm">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <div className="inline-block mb-4 p-3 rounded-2xl" style={{ backgroundColor: '#8b7355' }}>
-            <span className="text-white font-serif text-2xl font-bold">W</span>
-          </div>
-          <h1 style={{ color: '#8b7355' }} className="text-4xl font-serif font-bold mb-2">Workforce</h1>
-          <p style={{ color: '#d4a574' }} className="text-sm tracking-widest uppercase font-medium">Wellbeing Platform</p>
-          <div className="w-12 h-1 mx-auto mt-4" style={{ background: 'linear-gradient(to right, #8b7355, #d4a574)' }}></div>
-        </div>
-
-        {/* Form Card */}
-        <div className="bg-white rounded-2xl border p-8 mb-6 shadow-lg" style={{ borderColor: '#fef9e7' }}>
-          <form onSubmit={handleLogin} className="space-y-5">
-            <div>
-              <label style={{ color: '#8b7355' }} className="block text-sm font-semibold mb-2">Email Address</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                className="w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition"
-                style={{ borderColor: '#fef9e7', backgroundColor: '#fefcf3', color: '#8b7355' }}
-                required
-                disabled={loading}
-              />
-            </div>
-
-            <div>
-              <label style={{ color: '#8b7355' }} className="block text-sm font-semibold mb-2">Password</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
-                className="w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition"
-                style={{ borderColor: '#fef9e7', backgroundColor: '#fefcf3', color: '#8b7355' }}
-                required
-                disabled={loading}
-              />
-            </div>
-
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
-                {error}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full text-white py-2.5 rounded-lg font-semibold transition transform hover:scale-105 disabled:scale-100 mt-6"
-              style={{ 
-                background: `linear-gradient(to right, #8b7355, #d4a574)`,
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        bgcolor: 'background.default',
+        p: 2,
+      }}
+    >
+      <Container maxWidth="xs">
+        <Stack spacing={4}>
+          {/* Header */}
+          <Box sx={{ textAlign: 'center' }}>
+            <Box
+              sx={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 60,
+                height: 60,
+                bgcolor: 'primary.main',
+                borderRadius: 2,
+                mb: 2,
               }}
             >
-              {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  Signing in...
-                </span>
-              ) : (
-                'Sign In'
-              )}
-            </button>
-          </form>
-        </div>
+              <Work sx={{ color: 'white', fontSize: 32 }} />
+            </Box>
+            <Typography
+              variant="h4"
+              sx={{
+                fontWeight: 700,
+                mb: 1,
+                color: 'primary.main',
+              }}
+            >
+              Workforce
+            </Typography>
+            <Typography
+              variant="subtitle2"
+              sx={{
+                textTransform: 'uppercase',
+                letterSpacing: 0.5,
+                color: 'text.secondary',
+                fontWeight: 600,
+              }}
+            >
+              Wellbeing Analytics Platform
+            </Typography>
+          </Box>
 
-        {/* Demo Accounts */}
-        <div className="space-y-3">
-          <p style={{ color: '#8b7355' }} className="text-xs font-bold uppercase tracking-widest text-center">Quick Access</p>
-          
-          <button
-            onClick={() => handleDemoLogin('supervisor@example.com', 'password123')}
-            disabled={loading}
-            className="w-full p-4 bg-white border-2 rounded-xl hover:shadow-md transition disabled:opacity-50 group"
-            style={{ borderColor: '#fef9e7' }}
+          {/* Login Form Card */}
+          <Card sx={{ p: 4, boxShadow: 2 }}>
+            <form onSubmit={handleLogin}>
+              <Stack spacing={2.5}>
+                <TextField
+                  label="Email Address"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  fullWidth
+                  required
+                  disabled={loading}
+                  variant="outlined"
+                />
+
+                <TextField
+                  label="Password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  fullWidth
+                  required
+                  disabled={loading}
+                  variant="outlined"
+                />
+
+                {error && (
+                  <Alert severity="error">{error}</Alert>
+                )}
+
+                <Button
+                  type="submit"
+                  variant="contained"
+                  size="large"
+                  fullWidth
+                  disabled={loading}
+                  sx={{
+                    py: 1.5,
+                    fontSize: '1rem',
+                    fontWeight: 600,
+                    textTransform: 'none',
+                  }}
+                >
+                  {loading ? (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <CircularProgress size={20} color="inherit" />
+                      Signing in...
+                    </Box>
+                  ) : (
+                    'Sign In'
+                  )}
+                </Button>
+              </Stack>
+            </form>
+          </Card>
+
+          {/* Divider */}
+          <Divider sx={{ my: 1 }}>
+            <Typography variant="caption" sx={{ textTransform: 'uppercase', fontWeight: 600 }}>
+              Quick Access
+            </Typography>
+          </Divider>
+
+          {/* Demo Accounts */}
+          <Stack spacing={2}>
+            <Paper
+              onClick={() => handleDemoLogin('supervisor@example.com', 'password123')}
+              disabled={loading}
+              component="button"
+              sx={{
+                p: 2,
+                border: '2px solid',
+                borderColor: 'divider',
+                background: 'white',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                opacity: loading ? 0.5 : 1,
+                transition: 'all 0.2s',
+                '&:hover': {
+                  boxShadow: 3,
+                  borderColor: 'primary.main',
+                  transform: 'translateY(-2px)',
+                },
+                textAlign: 'left',
+              }}
+            >
+              <Typography sx={{ fontWeight: 600, fontSize: '0.95rem' }}>
+                👥 Supervisor Account
+              </Typography>
+              <Typography variant="caption" sx={{ color: 'text.secondary', mt: 0.5, display: 'block' }}>
+                supervisor@example.com
+              </Typography>
+            </Paper>
+
+            <Paper
+              onClick={() => handleDemoLogin('employee@example.com', 'password123')}
+              disabled={loading}
+              component="button"
+              sx={{
+                p: 2,
+                border: '2px solid',
+                borderColor: 'divider',
+                background: 'white',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                opacity: loading ? 0.5 : 1,
+                transition: 'all 0.2s',
+                '&:hover': {
+                  boxShadow: 3,
+                  borderColor: 'primary.main',
+                  transform: 'translateY(-2px)',
+                },
+                textAlign: 'left',
+              }}
+            >
+              <Typography sx={{ fontWeight: 600, fontSize: '0.95rem' }}>
+                👤 Employee Account
+              </Typography>
+              <Typography variant="caption" sx={{ color: 'text.secondary', mt: 0.5, display: 'block' }}>
+                employee@example.com
+              </Typography>
+            </Paper>
+          </Stack>
+
+          {/* Footer */}
+          <Typography
+            variant="caption"
+            sx={{
+              textAlign: 'center',
+              color: 'text.secondary',
+              fontWeight: 500,
+              mt: 2,
+            }}
           >
-            <p style={{ color: '#8b7355' }} className="font-semibold text-sm">👥 Supervisor Account</p>
-            <p className="text-xs text-gray-500 mt-1">supervisor@example.com</p>
-          </button>
-
-          <button
-            onClick={() => handleDemoLogin('employee@example.com', 'password123')}
-            disabled={loading}
-            className="w-full p-4 bg-white border-2 rounded-xl hover:shadow-md transition disabled:opacity-50 group"
-            style={{ borderColor: '#fef9e7' }}
-          >
-            <p style={{ color: '#8b7355' }} className="font-semibold text-sm">👤 Employee Account</p>
-            <p className="text-xs text-gray-500 mt-1">employee@example.com</p>
-          </button>
-        </div>
-
-        {/* Footer */}
-        <p style={{ color: '#d4a574' }} className="text-center text-xs mt-8 font-medium">© 2025 Workforce Wellbeing</p>
-      </div>
-    </div>
+            © 2025 Workforce Wellbeing Analytics
+          </Typography>
+        </Stack>
+      </Container>
+    </Box>
   );
 };

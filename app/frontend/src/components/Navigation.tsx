@@ -1,10 +1,33 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
-import { LogOut, Menu, X } from 'lucide-react'
+import {
+  Drawer,
+  AppBar,
+  Toolbar,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Box,
+  Typography,
+  Divider,
+  IconButton,
+  Avatar,
+} from '@mui/material'
+import {
+  Menu as MenuIcon,
+  Close as CloseIcon,
+  Dashboard as DashboardIcon,
+  People as PeopleIcon,
+  Settings as SettingsIcon,
+  Logout as LogoutIcon,
+} from '@mui/icons-material'
 import { useAuth } from '../context/AuthContext'
 
+const DRAWER_WIDTH = 280
+
 export default function Navigation() {
-  const [isOpen, setIsOpen] = React.useState(false)
+  const [mobileOpen, setMobileOpen] = React.useState(false)
   const { user, logout } = useAuth()
   const navigate = useNavigate()
 
@@ -13,67 +36,168 @@ export default function Navigation() {
     navigate('/login')
   }
 
+  // Build menu items based on user role
+  const getMenuItems = () => {
+    const baseItems = [
+      { label: 'Dashboard', icon: <DashboardIcon />, path: '/' },
+    ]
+    
+    // Add Employees menu only for supervisors
+    if (user?.role === 'supervisor') {
+      baseItems.push({ label: 'Team Members', icon: <PeopleIcon />, path: '/employees' })
+    }
+    
+    baseItems.push({ label: 'Settings', icon: <SettingsIcon />, path: '/settings' })
+    
+    return baseItems
+  }
+
+  const menuItems = getMenuItems()
+
+  const drawer = (
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <Box sx={{ p: 3 }}>
+        <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
+          Wellbeing
+        </Typography>
+        <Typography variant="caption" color="textSecondary">
+          Analytics Platform
+        </Typography>
+      </Box>
+
+      {user && (
+        <>
+          <Divider />
+          <Box sx={{ p: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+              <Avatar sx={{ width: 40, height: 40, bgcolor: 'primary.main' }}>
+                {user.name.charAt(0)}
+              </Avatar>
+              <Box>
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  {user.name}
+                </Typography>
+                <Typography variant="caption" color="textSecondary" sx={{ textTransform: 'capitalize' }}>
+                  {user.role}
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
+          <Divider />
+        </>
+      )}
+
+      <List sx={{ flex: 1, pt: 2 }}>
+        {menuItems.map((item) => (
+          <ListItem
+            component="button"
+            key={item.label}
+            onClick={() => {
+              navigate(item.path)
+              setMobileOpen(false)
+            }}
+            sx={{
+              mb: 1,
+              mx: 1,
+              borderRadius: 1,
+              display: 'flex',
+              cursor: 'pointer',
+              border: 'none',
+              background: 'none',
+              padding: '8px 16px',
+              '&:hover': {
+                bgcolor: 'action.hover',
+              },
+            }}
+          >
+            <ListItemIcon sx={{ minWidth: 40, color: 'primary.main' }}>
+              {item.icon}
+            </ListItemIcon>
+            <ListItemText primary={item.label} />
+          </ListItem>
+        ))}
+      </List>
+
+      <Divider />
+      <Box sx={{ p: 1 }}>
+        <ListItem
+          component="button"
+          onClick={handleLogout}
+          sx={{
+            borderRadius: 1,
+            color: 'error.main',
+            display: 'flex',
+            cursor: 'pointer',
+            border: 'none',
+            background: 'none',
+            padding: '8px 16px',
+            '&:hover': {
+              bgcolor: 'error.lighter',
+            },
+          }}
+        >
+          <ListItemIcon sx={{ minWidth: 40, color: 'error.main' }}>
+            <LogoutIcon />
+          </ListItemIcon>
+          <ListItemText primary="Logout" />
+        </ListItem>
+      </Box>
+    </Box>
+  )
+
   return (
     <>
-      {/* Mobile menu button */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="md:hidden fixed top-4 left-4 z-50 p-2 text-primary"
+      {/* Mobile Drawer */}
+      <Drawer
+        variant="temporary"
+        open={mobileOpen}
+        onClose={() => setMobileOpen(false)}
+        sx={{
+          display: { xs: 'block', sm: 'none' },
+          '& .MuiDrawer-paper': {
+            boxSizing: 'border-box',
+            width: DRAWER_WIDTH,
+          },
+        }}
       >
-        {isOpen ? <X size={24} /> : <Menu size={24} />}
-      </button>
+        {drawer}
+      </Drawer>
 
-      {/* Sidebar Navigation */}
-      <nav
-        className={`${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        } md:translate-x-0 fixed md:static w-48 h-screen bg-white border-r border-cream-200 transition-transform duration-300 z-40 flex flex-col p-6`}
+      {/* Desktop Drawer */}
+      <Drawer
+        variant="permanent"
+        sx={{
+          display: { xs: 'none', sm: 'block' },
+          '& .MuiDrawer-paper': {
+            boxSizing: 'border-box',
+            width: DRAWER_WIDTH,
+            border: 'none',
+            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
+          },
+        }}
+        open
       >
-        {/* Logo */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-serif font-bold text-primary">WW</h1>
-          <p className="text-xs text-secondary">Wellbeing</p>
-        </div>
+        {drawer}
+      </Drawer>
 
-        {/* User Info */}
-        {user && (
-          <div className="pb-6 border-b border-cream-200 mb-6">
-            <p className="text-sm font-medium text-primary">{user.name}</p>
-            <p className="text-xs text-secondary capitalize mt-1">{user.role}</p>
-          </div>
-        )}
-
-        {/* Navigation */}
-        <div className="flex-1">
-          <p className="text-xs text-secondary uppercase tracking-wide mb-3 font-medium">Menu</p>
-          <a
-            href="/"
-            onClick={() => setIsOpen(false)}
-            className="block px-3 py-2 text-sm text-primary hover:bg-cream-100 rounded transition"
-          >
-            Dashboard
-          </a>
-        </div>
-
-        {/* Logout Button */}
-        <div className="border-t border-cream-200 pt-4">
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-sm text-primary hover:bg-cream-100 rounded transition"
-          >
-            <LogOut size={16} />
-            Logout
-          </button>
-        </div>
-      </nav>
-
-      {/* Mobile overlay */}
-      {isOpen && (
-        <div
-          className="md:hidden fixed inset-0 bg-black bg-opacity-20 z-30"
-          onClick={() => setIsOpen(false)}
-        />
-      )}
+      {/* Mobile AppBar */}
+      <AppBar
+        position="fixed"
+        sx={{
+          display: { xs: 'flex', sm: 'none' },
+          width: '100%',
+          zIndex: (theme) => theme.zIndex.drawer + 1,
+        }}
+      >
+        <Toolbar>
+          <IconButton color="inherit" edge="start" onClick={() => setMobileOpen(true)} sx={{ mr: 2 }}>
+            {mobileOpen ? <CloseIcon /> : <MenuIcon />}
+          </IconButton>
+          <Typography variant="h6" sx={{ flexGrow: 1 }}>
+            Wellbeing Analytics
+          </Typography>
+        </Toolbar>
+      </AppBar>
     </>
   )
 }
