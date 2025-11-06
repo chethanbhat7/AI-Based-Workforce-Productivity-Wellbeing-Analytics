@@ -1,6 +1,5 @@
 import React from 'react'
 import { Card, CardContent, Box, Typography } from '@mui/material'
-import { TrendingUp, TrendingDown } from '@mui/icons-material'
 
 interface StatCardProps {
   title: string
@@ -8,7 +7,6 @@ interface StatCardProps {
   icon: React.ReactNode
   bgColor?: string
   isScore?: boolean
-  trend?: number
 }
 
 export default function StatCard({ 
@@ -16,8 +14,7 @@ export default function StatCard({
   value, 
   icon, 
   bgColor = 'primary',
-  isScore,
-  trend 
+  isScore
 }: StatCardProps) {
   return (
     <Card
@@ -56,15 +53,6 @@ export default function StatCard({
             {isScore && <Typography component="span" variant="body2" color="textSecondary">/10</Typography>}
           </Typography>
         </Box>
-
-        {trend !== undefined && (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            {trend > 0 ? <TrendingUp sx={{ fontSize: 16, color: 'success.main' }} /> : <TrendingDown sx={{ fontSize: 16, color: 'error.main' }} />}
-            <Typography variant="caption" color={trend > 0 ? 'success.main' : 'error.main'} sx={{ fontWeight: 500 }}>
-              {trend > 0 ? '+' : ''}{trend}% vs last month
-            </Typography>
-          </Box>
-        )}
       </CardContent>
     </Card>
   )

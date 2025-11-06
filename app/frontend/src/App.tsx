@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
-import { ThemeProvider, createTheme, CssBaseline, Box } from '@mui/material'
+import { ThemeProvider, createTheme, CssBaseline, Box, AppBar, Toolbar, Typography } from '@mui/material'
 import { AuthProvider } from './context/AuthContext'
 import { useAuth } from './context/AuthContext'
 import Navigation from './components/Navigation'
@@ -65,20 +65,36 @@ function AppContent() {
   }
 
   return (
-    <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
-      <Navigation />
-      <Box component="main" sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-        <Routes>
-          {user.role === 'supervisor' ? (
-            <>
-              <Route path="/" element={<SupervisorView />} />
-              <Route path="/employees" element={<Employees />} />
-            </>
-          ) : (
-            <Route path="/" element={<EmployeeView />} />
-          )}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+    <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden', flexDirection: 'column' }}>
+      {/* Top Header - Desktop */}
+      <AppBar position="static" sx={{ display: { xs: 'none', sm: 'flex' } }}>
+        <Toolbar sx={{ bgcolor: 'primary.main' }}>
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+              Analytics Platform
+            </Typography>
+            <Typography variant="caption" sx={{ lineHeight: 1.2 }}>
+              Wellbeing
+            </Typography>
+          </Box>
+        </Toolbar>
+      </AppBar>
+      
+      <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden', mt: { xs: 7, sm: 0 } }}>
+        <Navigation />
+        <Box component="main" sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          <Routes>
+            {user.role === 'supervisor' ? (
+              <>
+                <Route path="/" element={<SupervisorView />} />
+                <Route path="/employees" element={<Employees />} />
+              </>
+            ) : (
+              <Route path="/" element={<EmployeeView />} />
+            )}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Box>
       </Box>
     </Box>
   )

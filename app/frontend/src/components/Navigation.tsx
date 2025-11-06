@@ -53,18 +53,8 @@ export default function Navigation() {
 
   const drawer = (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <Box sx={{ p: 3 }}>
-        <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
-          Wellbeing
-        </Typography>
-        <Typography variant="caption" color="textSecondary">
-          Analytics Platform
-        </Typography>
-      </Box>
-
       {user && (
         <>
-          <Divider />
           <Box sx={{ p: 2 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
               <Avatar sx={{ width: 40, height: 40, bgcolor: 'primary.main' }}>
@@ -190,9 +180,14 @@ export default function Navigation() {
           <IconButton color="inherit" edge="start" onClick={() => setMobileOpen(true)} sx={{ mr: 2 }}>
             {mobileOpen ? <CloseIcon /> : <MenuIcon />}
           </IconButton>
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            Wellbeing Analytics
-          </Typography>
+          <Box sx={{ flexGrow: 1 }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+              Analytics Platform
+            </Typography>
+            <Typography variant="caption" sx={{ lineHeight: 1.2 }}>
+              Wellbeing
+            </Typography>
+          </Box>
         </Toolbar>
       </AppBar>
     </>
