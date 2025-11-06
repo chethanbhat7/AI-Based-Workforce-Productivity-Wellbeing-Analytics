@@ -43,6 +43,19 @@ OAuth2-based integration platform for workplace productivity and wellbeing analy
   - Issue statistics
   - Context switching metrics
   - Priority/status distribution
+
+- **Asana OAuth2 Flow**
+  - Authorization URL generation
+  - Code exchange for tokens
+  - Token refresh mechanism
+  - Secure encrypted storage
+  
+- **Asana Data Fetching**
+  - User tasks (assigned/modified)
+  - Task completion tracking
+  - Project participation
+  - Workload statistics
+  - Context switching metrics
   
 - **Database Models**
   - Users
@@ -77,7 +90,8 @@ api/
 ├── integrations/
 │   ├── microsoft_graph.py # Microsoft 365 integration
 │   ├── slack.py          # Slack integration
-│   └── jira.py           # Jira integration
+│   ├── jira.py           # Jira integration
+│   └── asana.py          # Asana integration
 │
 └── utils/
     └── encryption.py      # Token encryption utilities
@@ -91,6 +105,7 @@ api/
 - Microsoft Azure App Registration (for Microsoft Graph)
 - Slack App (for Slack API)
 - Jira Cloud App (for Jira API)
+- Asana App (for Asana API)
 
 ### 1. Install Dependencies
 
@@ -228,13 +243,21 @@ GET /auth/jira/login?user_id={user_id}
 ```
 Redirects to Jira authorization page.
 
+### Asana Authentication
+
+#### Initiate Asana OAuth
+```http
+GET /auth/asana/login?user_id={user_id}
+```
+Redirects to Asana authorization page.
+
 ### Universal Endpoints
 
 #### Check Auth Status (All Providers)
 ```http
 GET /auth/status/{user_id}
 ```
-Shows all connected providers (Microsoft, Slack, Jira, etc.)
+Shows all connected providers (Microsoft, Slack, Jira, Asana, etc.)
 
 #### Disconnect Any Provider
 ```http
@@ -346,6 +369,46 @@ Response:
       "total_time_logged_hours": 72.5,
       "context_switching_score": 4,
       "unique_projects": 4
+    }
+  }
+}
+```
+
+#### Fetch Asana Data
+```http
+POST /data/asana/fetch
+{
+  "user_id": "123",
+  "workspace_gid": "workspace-gid",
+  "data_types": ["tasks", "projects", "stats"],
+  "days_back": 14
+}
+```
+
+Response:
+```json
+{
+  "status": "success",
+  "user_id": "123",
+  "provider": "asana",
+  "workspace_gid": "workspace-gid",
+  "results": {
+    "tasks": {
+      "count": 34,
+      "tasks": [...]
+    },
+    "projects": {
+      "count": 5,
+      "projects": [...]
+    },
+    "stats": {
+      "total_tasks": 34,
+      "completed_tasks": 28,
+      "completion_rate": 0.82,
+      "overdue_tasks": 2,
+      "unique_projects": 5,
+      "context_switching_score": 5,
+      "avg_tasks_per_day": 2.4
     }
   }
 }
@@ -505,6 +568,15 @@ created_at
 - Priority distribution
 - Worklog patterns by weekday
 - Average time per issue
+
+### From Asana
+- Tasks completed per week
+- Task completion rate
+- Overdue task ratio
+- Context switching score (project count)
+- Average tasks per day
+- Task status distribution
+- Subtask complexity
 
 ### Coming Soon
 - **HRIS**: Attendance, overtime, leave patterns

@@ -13,6 +13,7 @@ from config import settings
 from integrations.microsoft_graph import MicrosoftGraphAPI
 from integrations.slack import SlackAPI
 from integrations.jira import JiraAPI
+from integrations.asana import AsanaAPI
 from utils.encryption import decrypt_token
 
 logger = logging.getLogger(__name__)
@@ -519,4 +520,155 @@ async def fetch_jira_data(
         raise
     except Exception as e:
         logger.error(f"Error fetching Jira data: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/asana/fetch")
+async def fetch_asana_data(
+    user_id: str,
+    workspace_gid: str,
+    data_types: list[str],  # ["tasks", "projects", "stats"]
+    days_back: int = 14,
+    background_tasks: BackgroundTasks = None,
+    db: Session = Depends(get_db)
+):
+    """
+    Fetch Asana data for a user
+    Data types: tasks, projects, stats
+    """
+    try:
+        # Get valid token
+        access_token = await get_valid_token(user_id, "asana", db)
+        
+        # Initialize Asana API
+        asana_api = AsanaAPI(access_token)
+        
+        # Get current user
+        user_info = await asana_api.get_current_user()
+        user_gid = user_info["gid"]
+        
+        # Calculate date range
+        end_date = datetime.utcnow()
+        start_date = end_date - timedelta(days=days_back)
+        
+        results = {}
+        
+        # Fetch tasks
+        if "tasks" in data_types:
+            logger.info(f"Fetching Asana tasks for user {user_id}")
+            
+            fetch_record = DataFetch(
+                user_id=user_id,
+                provider="asana",
+                data_type="tasks",
+                fetch_start=start_date,
+                fetch_end=end_date,
+                status="in_progress"
+            )
+            db.add(fetch_record)
+            db.commit()
+            
+            try:
+                tasks = await asana_api.get_user_tasks(
+                    user_gid,
+                    workspace_gid,
+                    modified_since=start_date
+                )
+                results["tasks"] = {
+                    "count": len(tasks),
+                    "tasks": tasks
+                }
+                
+                fetch_record.status = "success"
+                fetch_record.records_fetched = len(tasks)
+                db.commit()
+                
+            except Exception as e:
+                fetch_record.status = "failed"
+                fetch_record.error_message = str(e)
+                db.commit()
+                raise
+        
+        # Fetch projects
+        if "projects" in data_types:
+            logger.info(f"Fetching Asana projects for workspace {workspace_gid}")
+            
+            fetch_record = DataFetch(
+                user_id=user_id,
+                provider="asana",
+                data_type="projects",
+                fetch_start=start_date,
+                fetch_end=end_date,
+                status="in_progress"
+            )
+            db.add(fetch_record)
+            db.commit()
+            
+            try:
+                projects = await asana_api.get_projects(workspace_gid)
+                results["projects"] = {
+                    "count": len(projects),
+                    "projects": projects
+                }
+                
+                fetch_record.status = "success"
+                fetch_record.records_fetched = len(projects)
+                db.commit()
+                
+            except Exception as e:
+                fetch_record.status = "failed"
+                fetch_record.error_message = str(e)
+                db.commit()
+                raise
+        
+        # Fetch statistics
+        if "stats" in data_types:
+            logger.info(f"Fetching Asana stats for user {user_id}")
+            
+            fetch_record = DataFetch(
+                user_id=user_id,
+                provider="asana",
+                data_type="stats",
+                fetch_start=start_date,
+                fetch_end=end_date,
+                status="in_progress"
+            )
+            db.add(fetch_record)
+            db.commit()
+            
+            try:
+                stats = await asana_api.get_user_stats(
+                    user_gid,
+                    workspace_gid,
+                    start_date,
+                    end_date
+                )
+                results["stats"] = stats
+                
+                fetch_record.status = "success"
+                fetch_record.records_fetched = 1
+                db.commit()
+                
+            except Exception as e:
+                fetch_record.status = "failed"
+                fetch_record.error_message = str(e)
+                db.commit()
+                raise
+        
+        return {
+            "status": "success",
+            "user_id": user_id,
+            "provider": "asana",
+            "workspace_gid": workspace_gid,
+            "date_range": {
+                "start": start_date.isoformat(),
+                "end": end_date.isoformat()
+            },
+            "results": results
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching Asana data: {e}")
         raise HTTPException(status_code=500, detail=str(e))

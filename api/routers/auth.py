@@ -14,6 +14,7 @@ from config import settings
 from integrations.microsoft_graph import MicrosoftGraphOAuth
 from integrations.slack import SlackOAuth
 from integrations.jira import JiraOAuth
+from integrations.asana import AsanaOAuth
 from utils.encryption import encrypt_token, decrypt_token
 
 logger = logging.getLogger(__name__)
@@ -202,6 +203,41 @@ async def refresh_token(
                 "status": "success",
                 "provider": provider,
                 "expires_at": token_record.expires_at.isoformat()
+            }
+        
+        elif provider == "asana":
+            # Refresh Asana token (if refresh token available)
+            if not token_record.refresh_token:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Asana token has no refresh token. Please reconnect."
+                )
+            
+            asana_oauth = AsanaOAuth(
+                client_id=settings.ASANA_CLIENT_ID,
+                client_secret=settings.ASANA_CLIENT_SECRET,
+                redirect_uri=settings.ASANA_REDIRECT_URI
+            )
+            
+            refresh_token = decrypt_token(token_record.refresh_token)
+            new_token = await asana_oauth.refresh_access_token(refresh_token)
+            
+            # Update token in database
+            token_record.access_token = encrypt_token(new_token["access_token"])
+            if "refresh_token" in new_token:
+                token_record.refresh_token = encrypt_token(new_token["refresh_token"])
+            
+            expires_in = new_token.get("expires_in")
+            if expires_in:
+                token_record.expires_at = datetime.utcnow() + timedelta(seconds=expires_in)
+            token_record.updated_at = datetime.utcnow()
+            
+            db.commit()
+            
+            return {
+                "status": "success",
+                "provider": provider,
+                "expires_at": token_record.expires_at.isoformat() if token_record.expires_at else None
             }
         
         else:
@@ -506,4 +542,108 @@ async def jira_callback(
     
     except Exception as e:
         logger.error(f"Error in Jira OAuth callback: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# Asana OAuth2
+@router.get("/asana/login")
+async def asana_login(user_id: str, db: Session = Depends(get_db)):
+    """
+    Initiate Asana OAuth2 flow
+    """
+    try:
+        # Generate state for CSRF protection
+        state = secrets.token_urlsafe(32)
+        oauth_states[state] = {
+            "user_id": user_id,
+            "provider": "asana",
+            "created_at": datetime.utcnow()
+        }
+        
+        # Initialize Asana OAuth
+        asana_oauth = AsanaOAuth(
+            client_id=settings.ASANA_CLIENT_ID,
+            client_secret=settings.ASANA_CLIENT_SECRET,
+            redirect_uri=settings.ASANA_REDIRECT_URI
+        )
+        auth_url = asana_oauth.get_authorization_url(state)
+        
+        logger.info(f"Redirecting user {user_id} to Asana login")
+        return RedirectResponse(url=auth_url)
+    
+    except Exception as e:
+        logger.error(f"Error initiating Asana OAuth: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/asana/callback")
+async def asana_callback(
+    code: str,
+    state: str,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    """
+    Handle Asana OAuth2 callback
+    Exchange code for tokens and store securely
+    """
+    try:
+        # Validate state
+        if state not in oauth_states:
+            raise HTTPException(status_code=400, detail="Invalid state parameter")
+        
+        state_data = oauth_states.pop(state)
+        user_id = state_data["user_id"]
+        
+        # Exchange code for tokens
+        asana_oauth = AsanaOAuth(
+            client_id=settings.ASANA_CLIENT_ID,
+            client_secret=settings.ASANA_CLIENT_SECRET,
+            redirect_uri=settings.ASANA_REDIRECT_URI
+        )
+        token_response = await asana_oauth.exchange_code_for_token(code)
+        
+        # Encrypt tokens before storage
+        encrypted_access_token = encrypt_token(token_response["access_token"])
+        encrypted_refresh_token = encrypt_token(token_response.get("refresh_token", ""))
+        
+        # Calculate expiration (Asana tokens typically don't expire, but handle if provided)
+        expires_in = token_response.get("expires_in")
+        expires_at = datetime.utcnow() + timedelta(seconds=expires_in) if expires_in else None
+        
+        # Check if token already exists
+        existing_token = db.query(OAuthToken).filter(
+            OAuthToken.user_id == user_id,
+            OAuthToken.provider == "asana"
+        ).first()
+        
+        if existing_token:
+            # Update existing token
+            existing_token.access_token = encrypted_access_token
+            existing_token.refresh_token = encrypted_refresh_token
+            existing_token.expires_at = expires_at
+            existing_token.updated_at = datetime.utcnow()
+        else:
+            # Create new token entry
+            new_token = OAuthToken(
+                user_id=user_id,
+                provider="asana",
+                access_token=encrypted_access_token,
+                refresh_token=encrypted_refresh_token,
+                expires_at=expires_at,
+                scopes=[],
+                metadata={"token_type": token_response.get("token_type")}
+            )
+            db.add(new_token)
+        
+        db.commit()
+        
+        logger.info(f"Successfully stored Asana tokens for user {user_id}")
+        
+        # Redirect to frontend success page
+        frontend_url = settings.CORS_ORIGINS[0]
+        return RedirectResponse(url=f"{frontend_url}/integrations/success?provider=asana")
+    
+    except Exception as e:
+        logger.error(f"Error in Asana OAuth callback: {e}")
         raise HTTPException(status_code=500, detail=str(e))

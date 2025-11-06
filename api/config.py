@@ -74,6 +74,11 @@ class Settings(BaseSettings):
     JIRA_REDIRECT_URI: str = "http://localhost:8000/auth/jira/callback"
     JIRA_CLOUD_ID: str = ""
     
+    # Asana OAuth2
+    ASANA_CLIENT_ID: str = ""
+    ASANA_CLIENT_SECRET: str = ""
+    ASANA_REDIRECT_URI: str = "http://localhost:8000/auth/asana/callback"
+    
     # Background Jobs
     CELERY_BROKER_URL: str = "redis://localhost:6379/0"
     CELERY_RESULT_BACKEND: str = "redis://localhost:6379/0"
