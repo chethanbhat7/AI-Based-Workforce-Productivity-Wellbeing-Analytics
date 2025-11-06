@@ -1,0 +1,48 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  @apply antialiased;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-cream-50 text-gray-800 font-sans;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-cream-100;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-cream-400 rounded;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-cream-600;
+}
+
+/* Custom utilities */
+@layer components {
+  .card-cream {
+    @apply bg-white border border-cream-200 shadow-sm hover:shadow-md transition-shadow;
+  }
+
+  .text-serif {
+    @apply font-serif;
+  }
+
+  .btn-primary {
+    @apply px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-opacity-90 transition;
+  }
+}

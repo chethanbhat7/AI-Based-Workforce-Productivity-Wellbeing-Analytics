@@ -1,0 +1,57 @@
+/* Global animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Apply animations */
+main {
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* Smooth transitions */
+* {
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+}
+
+/* Design system colors - Cream aesthetic */
+:root {
+  --cream-50: #fefdf9;
+  --cream-100: #fefcf3;
+  --cream-200: #fef9e7;
+  --cream-300: #fef5db;
+  --cream-400: #fef0c3;
+  --primary: #8b7355;
+  --secondary: #d4a574;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar-track {
+  background: var(--cream-100);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--secondary);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
