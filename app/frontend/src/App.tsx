@@ -1,9 +1,11 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { ThemeProvider, createTheme, CssBaseline } from '@mui/material'
-import { AuthProvider } from './context/AuthContext'
+import { AuthProvider, useAuth } from './context/AuthContext'
 import { Login } from './pages/Login'
 import { SupervisorRegister } from './pages/SupervisorRegister'
 import { MemberRegister } from './pages/MemberRegister'
+import { SupervisorDashboard } from './pages/SupervisorDashboard'
+import { MemberDashboard } from './pages/MemberDashboard'
 import './App.css'
 
 // Material UI Theme
@@ -42,12 +44,46 @@ const theme = createTheme({
 })
 
 function AppContent() {
+  const { user, loading } = useAuth();
+
+  // Wait for auth context to load user from localStorage
+  if (loading) {
+    return null;
+  }
+
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register/supervisor" element={<SupervisorRegister />} />
       <Route path="/register/member" element={<MemberRegister />} />
-      <Route path="*" element={<Navigate to="/login" replace />} />
+      
+      {/* Protected Routes */}
+      <Route
+        path="/dashboard/supervisor"
+        element={user && user.role === 'supervisor' ? <SupervisorDashboard /> : <Navigate to="/login" replace />}
+      />
+      <Route
+        path="/dashboard/member"
+        element={user && user.role === 'member' ? <MemberDashboard /> : <Navigate to="/login" replace />}
+      />
+      
+      {/* Home Route - Redirect based on role */}
+      <Route
+        path="/"
+        element={
+          user ? (
+            user.role === 'supervisor' ? (
+              <Navigate to="/dashboard/supervisor" replace />
+            ) : (
+              <Navigate to="/dashboard/member" replace />
+            )
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
+      />
+      
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
 }

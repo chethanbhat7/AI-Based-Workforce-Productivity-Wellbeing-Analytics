@@ -17,25 +17,96 @@ import {
 } from '@mui/material';
 import { Work } from '@mui/icons-material';
 
+// ==================== VALIDATION UTILITIES ====================
+
+const validateEmail = (email: string): { valid: boolean; error?: string } => {
+  if (!email || email.trim().length === 0) {
+    return { valid: false, error: 'Email is required' };
+  }
+  const pattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  if (!pattern.test(email)) {
+    return { valid: false, error: 'Invalid email format' };
+  }
+  return { valid: true };
+};
+
+const validatePassword = (password: string): { valid: boolean; error?: string } => {
+  if (!password || password.trim().length === 0) {
+    return { valid: false, error: 'Password is required' };
+  }
+  return { valid: true };
+};
+
 export const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [generalError, setGeneralError] = useState('');
   const [loading, setLoading] = useState(false);
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmail(e.target.value);
+    // Clear error for this field when user starts typing
+    if (errors['email']) {
+      setErrors(prev => ({
+        ...prev,
+        email: '',
+      }));
+    }
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPassword(e.target.value);
+    // Clear error for this field when user starts typing
+    if (errors['password']) {
+      setErrors(prev => ({
+        ...prev,
+        password: '',
+      }));
+    }
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+    let isValid = true;
+
+    // Validate email
+    const emailValidation = validateEmail(email);
+    if (!emailValidation.valid) {
+      newErrors['email'] = emailValidation.error || '';
+      isValid = false;
+    }
+
+    // Validate password
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.valid) {
+      newErrors['password'] = passwordValidation.error || '';
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setGeneralError('');
+
+    // Validate form before submitting
+    if (!validateForm()) {
+      return;
+    }
+
     setLoading(true);
 
     try {
-      await login(email, password);
+      await login(email.trim(), password);
       navigate('/');
     } catch (err: any) {
-      setError(err.message || 'Login failed.');
+      setGeneralError(err.message || 'Login failed.');
     } finally {
       setLoading(false);
     }
@@ -111,28 +182,32 @@ export const Login = () => {
                   label="Email Address"
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={handleEmailChange}
                   placeholder="you@example.com"
                   fullWidth
                   required
                   disabled={loading}
                   variant="outlined"
+                  error={!!errors['email']}
+                  helperText={errors['email']}
                 />
 
                 <TextField
                   label="Password"
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={handlePasswordChange}
                   placeholder="Enter your password"
                   fullWidth
                   required
                   disabled={loading}
                   variant="outlined"
+                  error={!!errors['password']}
+                  helperText={errors['password']}
                 />
 
-                {error && (
-                  <Alert severity="error">{error}</Alert>
+                {generalError && (
+                  <Alert severity="error">{generalError}</Alert>
                 )}
 
                 <Button

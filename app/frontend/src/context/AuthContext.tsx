@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 
-export type UserRole = 'supervisor' | 'employee';
+export type UserRole = 'supervisor' | 'member';
 
 interface AuthUser {
   id: string;
@@ -25,15 +25,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Load user from localStorage on mount
   useEffect(() => {
-    const savedUser = localStorage.getItem('authUser');
-    if (savedUser) {
-      try {
-        setUser(JSON.parse(savedUser));
-      } catch (err) {
-        localStorage.removeItem('authUser');
+    try {
+      const savedUser = localStorage.getItem('authUser');
+      if (savedUser) {
+        const parsedUser = JSON.parse(savedUser);
+        setUser(parsedUser);
       }
+    } catch (err) {
+      localStorage.removeItem('authUser');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   const login = async (email: string, password: string) => {

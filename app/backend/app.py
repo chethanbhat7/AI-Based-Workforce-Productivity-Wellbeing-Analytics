@@ -6,8 +6,58 @@ import os
 from dotenv import load_dotenv
 import uuid
 from datetime import datetime
+import re
 
 load_dotenv()
+
+# ==================== INPUT VALIDATION UTILITIES ====================
+
+def validate_email(email):
+    """Validate email format"""
+    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    return re.match(pattern, email) is not None
+
+def validate_password(password):
+    """
+    Validate password (minimal validation - just non-empty)
+    """
+    errors = []
+    
+    if not password or len(password.strip()) == 0:
+        errors.append('Password is required')
+    
+    return len(errors) == 0, errors
+
+def validate_phone(phone):
+    """Validate phone number (basic format)"""
+    if not phone:
+        return True  # Phone is optional
+    # Allow digits, spaces, dashes, and parentheses
+    pattern = r'^[\d\s\-\+\(\)]{10,}$'
+    return re.match(pattern, phone) is not None
+
+def validate_name(name):
+    """Validate name format"""
+    if not name or len(name.strip()) == 0:
+        return False, "Name cannot be empty"
+    if len(name) > 120:
+        return False, "Name cannot exceed 120 characters"
+    # Allow letters, spaces, hyphens, and apostrophes
+    if not re.match(r'^[a-zA-Z\s\-\']+$', name):
+        return False, "Name can only contain letters, spaces, hyphens, and apostrophes"
+    return True, None
+
+def validate_string_field(value, field_name, max_length=120, required=False):
+    """Generic string field validation"""
+    if not value or len(str(value).strip()) == 0:
+        if required:
+            return False, f"{field_name} is required"
+        return True, None
+    
+    if len(str(value)) > max_length:
+        return False, f"{field_name} cannot exceed {max_length} characters"
+    
+    return True, None
 
 app = Flask(__name__)
 CORS(app)
@@ -125,11 +175,22 @@ def login():
         if not data:
             return jsonify({'error': 'No JSON data provided'}), 400
         
-        email = data.get('email')
-        password = data.get('password')
+        email = data.get('email', '').strip()
+        password = data.get('password', '').strip()
         
-        if not email or not password:
-            return jsonify({'error': 'Email and password required'}), 400
+        # Validate email and password are provided
+        if not email:
+            return jsonify({'error': 'Email is required'}), 400
+        if not password:
+            return jsonify({'error': 'Password is required'}), 400
+        
+        # Validate email format
+        if not validate_email(email):
+            return jsonify({'error': 'Invalid email format'}), 400
+        
+        # Email should not exceed reasonable length
+        if len(email) > 120:
+            return jsonify({'error': 'Email is too long'}), 400
         
         # Try to find supervisor first
         supervisor = Supervisor.query.filter_by(email=email).first()
@@ -141,9 +202,10 @@ def login():
         if member and member.check_password(password):
             return jsonify(member.to_dict()), 200
         
-        return jsonify({'error': 'Invalid credentials'}), 401
+        # Generic error message for security (don't reveal if email exists)
+        return jsonify({'error': 'Invalid email or password'}), 401
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'An unexpected error occurred'}), 500
 
 @app.route('/api/register', methods=['POST'])
 def register():
@@ -154,51 +216,94 @@ def register():
         if not data:
             return jsonify({'error': 'No JSON data provided'}), 400
         
-        email = data.get('email')
-        password = data.get('password')
-        name = data.get('name')
-        role = data.get('role', 'member')  # 'supervisor' or 'member'
-        phone = data.get('phone', '')
-        department = data.get('department', '')
+        email = data.get('email', '').strip()
+        password = data.get('password', '').strip()
+        name = data.get('name', '').strip()
+        role = data.get('role', 'member').lower()  # 'supervisor' or 'member'
+        phone = data.get('phone', '').strip()
+        department = data.get('department', '').strip()
         
-        # Validate required fields
-        if not email or not password or not name:
-            return jsonify({'error': 'Email, password, and name are required'}), 400
+        # ==================== VALIDATION ====================
+        
+        # Validate email
+        if not email:
+            return jsonify({'error': 'Email is required'}), 400
+        if not validate_email(email):
+            return jsonify({'error': 'Invalid email format. Please enter a valid email address'}), 400
+        if len(email) > 120:
+            return jsonify({'error': 'Email cannot exceed 120 characters'}), 400
+        
+        # Validate name
+        name_valid, name_error = validate_name(name)
+        if not name_valid:
+            return jsonify({'error': name_error}), 400
+        
+        # Validate password
+        if not password:
+            return jsonify({'error': 'Password is required'}), 400
+        password_valid, password_errors = validate_password(password)
+        if not password_valid:
+            return jsonify({'error': 'Password requirements: ' + ', '.join(password_errors)}), 400
+        
+        # Validate phone (if provided)
+        if phone and not validate_phone(phone):
+            return jsonify({'error': 'Invalid phone number format'}), 400
+        if len(phone) > 20:
+            return jsonify({'error': 'Phone number cannot exceed 20 characters'}), 400
+        
+        # Validate department (supervisor only)
+        if role == 'supervisor':
+            dept_valid, dept_error = validate_string_field(department, 'Department', max_length=120, required=False)
+            if not dept_valid:
+                return jsonify({'error': dept_error}), 400
+        
+        # Validate role
+        if role not in ['supervisor', 'member']:
+            return jsonify({'error': 'Invalid role. Must be "supervisor" or "member"'}), 400
         
         # Check if user already exists in either table
         existing_supervisor = Supervisor.query.filter_by(email=email).first()
         existing_member = Member.query.filter_by(email=email).first()
         
         if existing_supervisor or existing_member:
-            return jsonify({'error': 'Email already registered'}), 409
+            return jsonify({'error': 'This email is already registered. Please use a different email or try logging in'}), 409
         
-        # Create new user based on role
-        if role == 'supervisor':
-            new_user = Supervisor(
-                id=str(uuid.uuid4()),
-                name=name,
-                email=email,
-                department=department,
-                phone=phone,
-                is_active=True
-            )
-        else:  # member
-            new_user = Member(
-                id=str(uuid.uuid4()),
-                name=name,
-                email=email,
-                phone=phone,
-                is_active=True
-            )
+        # ==================== CREATE USER ====================
         
-        new_user.set_password(password)
-        db.session.add(new_user)
-        db.session.commit()
+        try:
+            if role == 'supervisor':
+                new_user = Supervisor(
+                    id=str(uuid.uuid4()),
+                    name=name,
+                    email=email,
+                    department=department if department else None,
+                    phone=phone if phone else None,
+                    is_active=True
+                )
+            else:  # member
+                new_user = Member(
+                    id=str(uuid.uuid4()),
+                    name=name,
+                    email=email,
+                    phone=phone if phone else None,
+                    is_active=True
+                )
+            
+            new_user.set_password(password)
+            db.session.add(new_user)
+            db.session.commit()
+            
+            return jsonify({
+                'message': 'User registered successfully',
+                'user': new_user.to_dict()
+            }), 201
         
-        return jsonify({'message': 'User registered successfully', 'user': new_user.to_dict()}), 201
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'error': 'Failed to create user. Please try again.'}), 500
+    
     except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'An unexpected error occurred'}), 500
 
 @app.route('/api/health', methods=['GET'])
 def health():
