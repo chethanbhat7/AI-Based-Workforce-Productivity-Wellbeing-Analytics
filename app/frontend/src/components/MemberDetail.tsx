@@ -28,7 +28,7 @@ import { db } from '../firebase/config';
 import { generateConsistentValue, getTestScenarioValues } from '../utils/consistentValues';
 
 interface MemberDetailProps {
-  memberId: number;
+  firebaseId: string;
   onBack: () => void;
 }
 
@@ -49,7 +49,7 @@ interface MemberData {
   earlyExits: number;
 }
 
-export const MemberDetail = ({ memberId, onBack }: MemberDetailProps) => {
+export const MemberDetail = ({ firebaseId, onBack }: MemberDetailProps) => {
   const [memberData, setMemberData] = useState<MemberData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -58,25 +58,24 @@ export const MemberDetail = ({ memberId, onBack }: MemberDetailProps) => {
       try {
         setLoading(true);
         
-        // Fetch all members to find the one with matching index (memberId)
+        // Fetch the specific member by Firebase ID
         const membersRef = collection(db, 'users');
         const q = query(membersRef, where('role', '==', 'member'));
         const querySnapshot = await getDocs(q);
         
-        const members: any[] = [];
+        let member: any = null;
         querySnapshot.forEach((doc) => {
-          members.push({ firebaseId: doc.id, ...doc.data() });
+          if (doc.id === firebaseId) {
+            member = { firebaseId: doc.id, ...doc.data() };
+          }
         });
-        
-        // Get the member at the index (memberId is 1-based)
-        const member = members[memberId - 1];
         
         if (member) {
           const email = member.email || '';
           const testScenario = getTestScenarioValues(email);
           
           setMemberData({
-            id: memberId,
+            id: 1, // Not used anymore, but kept for backwards compatibility
             name: member.name || 'Unknown',
             email: email,
             department: member.department || 'Engineering',
@@ -100,7 +99,7 @@ export const MemberDetail = ({ memberId, onBack }: MemberDetailProps) => {
     };
 
     fetchMemberData();
-  }, [memberId]);
+  }, [firebaseId]);
 
   if (loading) {
     return (
@@ -112,7 +111,7 @@ export const MemberDetail = ({ memberId, onBack }: MemberDetailProps) => {
 
   if (!memberData) {
     return (
-      <Box sx={{ maxWidth: 1400, mx: 'auto', p: 3 }}>
+      <Box sx={{ width: '100%', p: 3 }}>
         <Typography variant="h6" sx={{ color: '#7f8c8d' }}>
           Member not found
         </Typography>
@@ -125,7 +124,7 @@ export const MemberDetail = ({ memberId, onBack }: MemberDetailProps) => {
   );
 
   return (
-    <Box sx={{ maxWidth: 1400, mx: 'auto', p: 3 }}>
+    <Box sx={{ width: '100%', p: 3 }}>
       {/* Breadcrumb Navigation */}
       <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
         <IconButton onClick={onBack} sx={{ bgcolor: '#ecf0f1' }}>
@@ -180,10 +179,11 @@ export const MemberDetail = ({ memberId, onBack }: MemberDetailProps) => {
       {/* Efficiency Score Card */}
       <Card
         sx={{
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white',
+          bgcolor: 'white',
+          border: '1px solid',
+          borderColor: 'divider',
           mb: 4,
-          boxShadow: 3,
+          boxShadow: 2,
         }}
       >
         <CardContent sx={{ p: 3 }}>
@@ -193,7 +193,7 @@ export const MemberDetail = ({ memberId, onBack }: MemberDetailProps) => {
                 width: 100,
                 height: 100,
                 borderRadius: '50%',
-                bgcolor: 'rgba(255, 255, 255, 0.2)',
+                bgcolor: '#e3f2fd',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -201,17 +201,17 @@ export const MemberDetail = ({ memberId, onBack }: MemberDetailProps) => {
               }}
             >
               <Box sx={{ textAlign: 'center' }}>
-                <Typography variant="h3" sx={{ fontWeight: 700 }}>
+                <Typography variant="h3" sx={{ fontWeight: 700, color: '#1976d2' }}>
                   {efficiencyScore}
                 </Typography>
-                <Typography variant="caption">/100</Typography>
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>/100</Typography>
               </Box>
             </Box>
             <Box sx={{ flex: 1 }}>
               <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
                 Overall Efficiency Score
               </Typography>
-              <Typography variant="body2" sx={{ opacity: 0.9, mb: 2 }}>
+              <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
                 Based on task completion, meeting time, and logged hours
               </Typography>
               <LinearProgress
@@ -220,9 +220,9 @@ export const MemberDetail = ({ memberId, onBack }: MemberDetailProps) => {
                 sx={{
                   height: 8,
                   borderRadius: 4,
-                  bgcolor: 'rgba(255, 255, 255, 0.2)',
+                  bgcolor: '#e0e0e0',
                   '& .MuiLinearProgress-bar': {
-                    bgcolor: 'white',
+                    bgcolor: '#1976d2',
                     borderRadius: 4,
                   },
                 }}

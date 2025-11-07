@@ -164,6 +164,71 @@ export const MemberDashboard = () => {
                 <AccountCircle sx={{ mr: 1, fontSize: 20 }} />
                 <Typography variant="body2">Account</Typography>
               </MenuItem>
+              <MenuItem 
+                onClick={() => setDarkMode(!darkMode)}
+                sx={{
+                  position: 'relative',
+                  overflow: 'hidden',
+                  background: darkMode 
+                    ? 'linear-gradient(135deg, rgba(30, 30, 30, 0.95) 0%, rgba(50, 50, 50, 0.9) 100%)'
+                    : 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(240, 240, 240, 0.9) 100%)',
+                  backdropFilter: 'blur(20px) saturate(180%)',
+                  WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+                  border: darkMode 
+                    ? '1px solid rgba(255, 255, 255, 0.1)' 
+                    : '1px solid rgba(0, 0, 0, 0.1)',
+                  borderRadius: 1.5,
+                  mx: 1,
+                  my: 0.5,
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  boxShadow: darkMode
+                    ? '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+                    : '0 8px 32px rgba(31, 38, 135, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.8)',
+                  '&:hover': {
+                    background: darkMode
+                      ? 'linear-gradient(135deg, rgba(40, 40, 40, 0.95) 0%, rgba(60, 60, 60, 0.9) 100%)'
+                      : 'linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(245, 245, 245, 0.95) 100%)',
+                    transform: 'translateY(-1px)',
+                    boxShadow: darkMode
+                      ? '0 12px 40px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)'
+                      : '0 12px 40px rgba(31, 38, 135, 0.2), inset 0 1px 0 rgba(255, 255, 255, 1)',
+                  },
+                  '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: '50%',
+                    background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 100%)',
+                    pointerEvents: 'none',
+                  },
+                  '&::after': {
+                    content: '""',
+                    position: 'absolute',
+                    top: '-50%',
+                    left: '-50%',
+                    width: '200%',
+                    height: '200%',
+                    background: 'radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%)',
+                    opacity: 0,
+                    transition: 'opacity 0.3s ease',
+                    pointerEvents: 'none',
+                  },
+                  '&:hover::after': {
+                    opacity: 1,
+                  },
+                }}
+              >
+                {darkMode ? (
+                  <LightMode sx={{ mr: 1, fontSize: 20, color: '#fff' }} />
+                ) : (
+                  <DarkMode sx={{ mr: 1, fontSize: 20 }} />
+                )}
+                <Typography variant="body2" sx={{ color: darkMode ? '#fff' : 'inherit' }}>
+                  {darkMode ? 'Light Mode' : 'Dark Mode'}
+                </Typography>
+              </MenuItem>
               <MenuItem onClick={handleLogout}>
                 <Logout sx={{ mr: 1, fontSize: 20 }} />
                 <Typography variant="body2">Logout</Typography>

@@ -134,7 +134,7 @@ export const ProductivityMetrics = () => {
   const efficiencyScore = getEfficiencyScore();
 
   return (
-    <Box sx={{ maxWidth: 1400, mx: 'auto', p: 3 }}>
+    <Box sx={{ width: '100%', p: 3 }}>
       {/* Header with Efficiency Score */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" sx={{ fontWeight: 700, mb: 3 }}>
@@ -144,10 +144,11 @@ export const ProductivityMetrics = () => {
         {/* Efficiency Score Card */}
         <Card
           sx={{
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            color: 'white',
+            bgcolor: 'white',
+            border: '1px solid',
+            borderColor: 'divider',
             mb: 4,
-            boxShadow: 3,
+            boxShadow: 2,
           }}
         >
           <CardContent sx={{ p: 3 }}>
@@ -157,7 +158,7 @@ export const ProductivityMetrics = () => {
                   width: 100,
                   height: 100,
                   borderRadius: '50%',
-                  bgcolor: 'rgba(255, 255, 255, 0.2)',
+                  bgcolor: '#e3f2fd',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -165,17 +166,17 @@ export const ProductivityMetrics = () => {
                 }}
               >
                 <Box sx={{ textAlign: 'center' }}>
-                  <Typography variant="h3" sx={{ fontWeight: 700 }}>
+                  <Typography variant="h3" sx={{ fontWeight: 700, color: '#1976d2' }}>
                     {efficiencyScore}
                   </Typography>
-                  <Typography variant="caption">/100</Typography>
+                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>/100</Typography>
                 </Box>
               </Box>
               <Box sx={{ flex: 1 }}>
                 <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
                   Overall Efficiency Score
                 </Typography>
-                <Typography variant="body2" sx={{ opacity: 0.9, mb: 2 }}>
+                <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
                   Based on task completion, meeting time, and logged hours
                 </Typography>
                 <LinearProgress
@@ -184,9 +185,9 @@ export const ProductivityMetrics = () => {
                   sx={{
                     height: 8,
                     borderRadius: 4,
-                    bgcolor: 'rgba(255, 255, 255, 0.2)',
+                    bgcolor: '#e0e0e0',
                     '& .MuiLinearProgress-bar': {
-                      bgcolor: 'white',
+                      bgcolor: '#1976d2',
                       borderRadius: 4,
                     },
                   }}

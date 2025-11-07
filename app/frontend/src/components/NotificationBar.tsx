@@ -193,26 +193,26 @@ export const NotificationBar = () => {
   const getSeverityIcon = (severity: string) => {
     switch (severity) {
       case 'error':
-        return <ErrorIcon sx={{ color: '#e74c3c', fontSize: 20 }} />;
+        return <ErrorIcon sx={{ color: '#a93226', fontSize: 20 }} />;
       case 'warning':
-        return <Warning sx={{ color: '#f39c12', fontSize: 20 }} />;
+        return <Warning sx={{ color: '#c77c11', fontSize: 20 }} />;
       case 'success':
-        return <CheckCircle sx={{ color: '#2ecc71', fontSize: 20 }} />;
+        return <CheckCircle sx={{ color: '#1e7e45', fontSize: 20 }} />;
       default:
-        return <Info sx={{ color: '#3498db', fontSize: 20 }} />;
+        return <Info sx={{ color: '#1e5f8c', fontSize: 20 }} />;
     }
   };
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case 'error':
-        return '#e74c3c';
+        return '#a93226';
       case 'warning':
-        return '#f39c12';
+        return '#c77c11';
       case 'success':
-        return '#2ecc71';
+        return '#1e7e45';
       default:
-        return '#3498db';
+        return '#1e5f8c';
     }
   };
 
@@ -244,11 +244,25 @@ export const NotificationBar = () => {
           vertical: 'top',
           horizontal: 'right',
         }}
+        TransitionProps={{
+          timeout: 300,
+        }}
         PaperProps={{
           sx: {
             width: 400,
             maxHeight: 500,
             mt: 1,
+            animation: 'fadeSlideIn 0.3s ease-out',
+            '@keyframes fadeSlideIn': {
+              '0%': {
+                opacity: 0,
+                transform: 'translateY(-10px)',
+              },
+              '100%': {
+                opacity: 1,
+                transform: 'translateY(0)',
+              },
+            },
           },
         }}
       >
@@ -309,10 +323,10 @@ export const NotificationBar = () => {
                       size="small"
                       onClick={() => handleDelete(notification.id)}
                       sx={{
-                        color: '#95a5a6',
+                        color: '#a93226',
                         '&:hover': {
-                          color: '#e74c3c',
-                          bgcolor: '#e74c3c15',
+                          color: '#a93226',
+                          bgcolor: '#a9322615',
                         },
                       }}
                     >
@@ -329,9 +343,9 @@ export const NotificationBar = () => {
                       onClick={() => handleVolunteer(notification)}
                       sx={{
                         ml: 4,
-                        bgcolor: '#3498db',
+                        bgcolor: '#1e5f8c',
                         '&:hover': {
-                          bgcolor: '#2980b9',
+                          bgcolor: '#16425b',
                         },
                       }}
                     >
@@ -352,7 +366,7 @@ export const NotificationBar = () => {
               onClick={handleClearAll}
               sx={{
                 justifyContent: 'center',
-                color: '#e74c3c',
+                color: '#a93226',
                 fontWeight: 600,
                 py: 1.5,
               }}
