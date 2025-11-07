@@ -35,7 +35,6 @@ gunicorn main:app \
     --worker-class uvicorn.workers.UvicornWorker \
     --bind 0.0.0.0:$PORT \
     --timeout 120 \
-    --keepalive 5 \
     --log-level info \
     --access-logfile - \
     --error-logfile - \
