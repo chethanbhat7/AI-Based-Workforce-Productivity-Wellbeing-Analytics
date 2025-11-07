@@ -1,6 +1,6 @@
 import { 
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
   signOut,
   User
 } from 'firebase/auth';
@@ -35,3 +35,5 @@ export const logoutUser = async () => {
 export const getCurrentUser = (): User | null => {
   return auth.currentUser;
 };
+
+export type { User };

@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged as firebaseOnAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase/config';
 import { loginWithEmail, logoutUser } from '../firebase/auth';
@@ -42,7 +42,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     // Listen to Firebase auth state changes
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: any) => {
+    const unsubscribe = firebaseOnAuthStateChanged(auth, async (firebaseUser: any) => {
       if (firebaseUser) {
         // User is signed in with Firebase
         const savedUser = localStorage.getItem('authUser');
