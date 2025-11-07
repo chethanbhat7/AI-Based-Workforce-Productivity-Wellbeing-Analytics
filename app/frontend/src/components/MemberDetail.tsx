@@ -14,8 +14,6 @@ import {
 } from '@mui/material';
 import {
   VideoCall,
-  Chat,
-  Assignment,
   AccessTime,
   TrendingUp,
   Speed,
