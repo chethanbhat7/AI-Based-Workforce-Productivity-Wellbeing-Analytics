@@ -26,9 +26,9 @@ async def lifespan(app: FastAPI):
     # Startup
     logger.info("🚀 Starting Workforce Wellbeing Analytics API")
     
-    # Create database tables
-    Base.metadata.create_all(bind=engine)
-    logger.info("✅ Database tables initialized")
+    # Note: Database table creation removed for serverless deployment
+    # Tables should be created manually or via migration scripts
+    # Base.metadata.create_all(bind=engine)
     
     yield
     

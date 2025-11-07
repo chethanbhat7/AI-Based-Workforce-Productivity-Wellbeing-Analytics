@@ -1,16 +1,15 @@
 {
   "version": 2,
+  "buildCommand": "cd app/frontend && npm install && npm run build",
+  "outputDirectory": "app/frontend/dist",
+  "installCommand": "echo 'Skipping root install'",
   "builds": [
     {
-      "src": "app/frontend/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
-    },
-    {
       "src": "api/index.py",
-      "use": "@vercel/python"
+      "use": "@vercel/python",
+      "config": {
+        "maxLambdaSize": "50mb"
+      }
     }
   ],
   "routes": [
@@ -39,8 +38,15 @@
       "dest": "api/index.py"
     },
     {
+      "src": "/health",
+      "dest": "api/index.py"
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
       "src": "/(.*)",
-      "dest": "app/frontend/dist/$1"
+      "dest": "/index.html"
     }
   ],
   "env": {
