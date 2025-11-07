@@ -79,6 +79,34 @@ class Settings(BaseSettings):
     ASANA_CLIENT_SECRET: str = ""
     ASANA_REDIRECT_URI: str = "http://localhost:8000/auth/asana/callback"
     
+    # GitHub OAuth2
+    GITHUB_CLIENT_ID: str = ""
+    GITHUB_CLIENT_SECRET: str = ""
+    GITHUB_REDIRECT_URI: str = "http://localhost:8000/auth/github/callback"
+    GITHUB_SCOPES: List[str] = [
+        "repo",  # Access to repositories
+        "read:user",  # Read user profile
+        "user:email",  # Access user email
+        "read:org"  # Read organization data
+    ]
+    
+    # M2SYS CloudABIS Biometric Authentication
+    CLOUDABIS_APP_KEY: str = ""
+    CLOUDABIS_SECRET_KEY: str = ""
+    CLOUDABIS_CUSTOMER_KEY: str = ""
+    CLOUDABIS_BASE_URL: str = "https://cloud.m2sys.com/CloudABIS/api"
+    CLOUDABIS_ENGINE_NAME: str = "FACE"  # FACE, FINGERPRINT, IRIS, or MULTIMODAL
+    
+    # Google Sheets OAuth2 (for attendance tracking)
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
+    GOOGLE_REDIRECT_URI: str = "http://localhost:8000/auth/google/callback"
+    GOOGLE_SCOPES: List[str] = [
+        "https://www.googleapis.com/auth/spreadsheets",  # Read and write spreadsheets
+        "https://www.googleapis.com/auth/drive.file"  # Access to created/opened files
+    ]
+    GOOGLE_ATTENDANCE_SPREADSHEET_ID: str = ""  # ID of the attendance tracking spreadsheet
+    
     # Background Jobs
     CELERY_BROKER_URL: str = "redis://localhost:6379/0"
     CELERY_RESULT_BACKEND: str = "redis://localhost:6379/0"

@@ -401,27 +401,41 @@ class FeatureExtractor:
             "avg_break_length_minutes": round(avg_break_length, 1)
         }
     
-    def calculate_absenteeism_rate(
+    def extract_github_features(
         self,
-        attendance_records: List[Dict],
+        github_stats: Dict,
         start_date: datetime,
         end_date: datetime
-    ) -> float:
+    ) -> Dict[str, float]:
         """
-        Calculate absenteeism rate from HRIS data
+        Extract GitHub contribution features
+        
+        Args:
+            github_stats: Output from GitHubAPI.get_user_stats()
+            start_date: Start date
+            end_date: End date
+        
+        Returns:
+            GitHub-based productivity features
         """
-        if not attendance_records:
-            return 0.02  # Default 2%
+        if not github_stats:
+            return {
+                "github_commits_per_week": 0.0,
+                "github_prs_per_week": 0.0,
+                "github_pr_merge_rate": 0.0,
+                "github_reviews_per_week": 0.0,
+                "github_repo_context_switching": 0.0,
+                "github_activity_consistency": 0.0
+            }
         
-        # Count absences
-        absences = sum(
-            1 for record in attendance_records
-            if record.get("status") == "absent"
-        )
-        
-        total_work_days = (end_date - start_date).days * 5 / 7  # Approximate work days
-        
-        return round(absences / total_work_days if total_work_days > 0 else 0.0, 3)
+        return {
+            "github_commits_per_week": round(github_stats.get("commits_per_week", 0.0), 1),
+            "github_prs_per_week": round(github_stats.get("prs_per_week", 0.0), 1),
+            "github_pr_merge_rate": round(github_stats.get("pr_merge_rate", 0.0), 2),
+            "github_reviews_per_week": round(github_stats.get("reviews_per_week", 0.0), 1),
+            "github_repo_context_switching": github_stats.get("repo_context_switching", 0),
+            "github_activity_consistency": round(github_stats.get("activity_consistency", 0.0), 2)
+        }
     
     def calculate_performance_score(
         self,
@@ -462,12 +476,16 @@ class FeatureExtractor:
         user_id: str,
         start_date: datetime,
         end_date: datetime,
-        attendance_records: Optional[List[Dict]] = None
+        attendance_records: Optional[List[Dict]] = None,
+        github_stats: Optional[Dict] = None
     ) -> Dict[str, float]:
         """
         Extract all features from all data sources
         
         Returns a complete feature dictionary matching employee_data.csv schema
+        
+        Args:
+            github_stats: Optional GitHub statistics from GitHubAPI.get_user_stats()
         """
         # Extract features from each source
         calendar_features = self.extract_calendar_features(
@@ -490,6 +508,11 @@ class FeatureExtractor:
             attendance_records or [], start_date, end_date
         )
         
+        # Extract GitHub features if available
+        github_features = self.extract_github_features(
+            github_stats or {}, start_date, end_date
+        )
+        
         # Calculate performance score
         performance_score = self.calculate_performance_score(
             task_features["task_completion_rate"],
@@ -503,6 +526,7 @@ class FeatureExtractor:
             **comm_features,
             **task_features,
             **worklog_features,
+            **github_features,
             "absenteeism_rate": absenteeism_rate,
             "performance_score": performance_score,
             # Burnout risk will be calculated by ML model
