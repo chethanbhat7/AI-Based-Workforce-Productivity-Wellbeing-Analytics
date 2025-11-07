@@ -26,19 +26,22 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Load user from localStorage and listen to Firebase auth state
   useEffect(() => {
-    try {
-      const savedUser = localStorage.getItem('authUser');
-      if (savedUser) {
-        const parsedUser = JSON.parse(savedUser);
-        setUser(parsedUser);
+    // Only try to load from localStorage once on mount
+    if (!isInitialized) {
+      try {
+        const savedUser = localStorage.getItem('authUser');
+        if (savedUser) {
+          const parsedUser = JSON.parse(savedUser);
+          setUser(parsedUser);
+        }
+      } catch (err) {
+        localStorage.removeItem('authUser');
       }
-    } catch (err) {
-      localStorage.removeItem('authUser');
-    } finally {
-      setLoading(false);
+      setIsInitialized(true);
     }
 
     // Listen to Firebase auth state changes
@@ -46,7 +49,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (firebaseUser) {
         // User is signed in with Firebase
         const savedUser = localStorage.getItem('authUser');
-        if (!savedUser) {
+        
+        // Only fetch user data if we don't have it already
+        if (!savedUser || !user) {
           // Fetch user details from Firestore
           try {
             const userDocRef = doc(db, 'users', firebaseUser.uid);
@@ -86,7 +91,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [isInitialized, user]);
 
   const login = async (email: string, password: string) => {
     setLoading(true);
