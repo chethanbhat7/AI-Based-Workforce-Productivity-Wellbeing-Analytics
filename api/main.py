@@ -8,7 +8,7 @@ from fastapi.responses import RedirectResponse
 from contextlib import asynccontextmanager
 import logging
 
-from routers import auth, data, users, features
+from routers import auth, data, users, features, dashboard, attendance
 from database import engine, Base
 from config import settings
 
@@ -58,6 +58,8 @@ app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 app.include_router(data.router, prefix="/data", tags=["Data Fetching"])
 app.include_router(users.router, prefix="/users", tags=["Users"])
 app.include_router(features.router, prefix="/features", tags=["Feature Extraction"])
+app.include_router(dashboard.router, prefix="/dashboard", tags=["Dashboard"])
+app.include_router(attendance.router, prefix="/api", tags=["Attendance"])
 
 
 @app.get("/")

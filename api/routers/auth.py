@@ -15,6 +15,7 @@ from integrations.microsoft_graph import MicrosoftGraphOAuth
 from integrations.slack import SlackOAuth
 from integrations.jira import JiraOAuth
 from integrations.asana import AsanaOAuth
+from integrations.google_sheets import GoogleSheetsOAuth
 from utils.encryption import encrypt_token, decrypt_token
 
 logger = logging.getLogger(__name__)
@@ -647,3 +648,101 @@ async def asana_callback(
     except Exception as e:
         logger.error(f"Error in Asana OAuth callback: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# Google Sheets OAuth2 (for Attendance Tracking)
+@router.get("/google/login")
+async def google_login(user_id: str, db: Session = Depends(get_db)):
+    """
+    Initiate Google OAuth2 flow for Google Sheets access
+    Required for storing attendance records
+    """
+    try:
+        # Generate state for CSRF protection
+        state = secrets.token_urlsafe(32)
+        oauth_states[state] = {
+            "user_id": user_id,
+            "provider": "google",
+            "created_at": datetime.utcnow()
+        }
+        
+        # Initialize Google OAuth
+        google_oauth = GoogleSheetsOAuth()
+        auth_url = google_oauth.get_authorization_url(state)
+        
+        logger.info(f"Redirecting user {user_id} to Google login")
+        return RedirectResponse(url=auth_url)
+    
+    except Exception as e:
+        logger.error(f"Error initiating Google OAuth: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/google/callback")
+async def google_callback(
+    code: str,
+    state: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Handle Google OAuth2 callback
+    Stores access and refresh tokens for Google Sheets API
+    """
+    try:
+        # Verify state
+        if state not in oauth_states:
+            raise HTTPException(status_code=400, detail="Invalid state parameter")
+        
+        state_data = oauth_states.pop(state)
+        user_id = state_data["user_id"]
+        
+        # Exchange code for tokens
+        google_oauth = GoogleSheetsOAuth()
+        token_response = await google_oauth.exchange_code_for_token(code)
+        
+        # Encrypt tokens before storage
+        encrypted_access_token = encrypt_token(token_response["access_token"])
+        encrypted_refresh_token = encrypt_token(token_response.get("refresh_token", ""))
+        
+        # Calculate expiration
+        expires_in = token_response.get("expires_in", 3600)
+        expires_at = datetime.utcnow() + timedelta(seconds=expires_in)
+        
+        # Check if token already exists
+        existing_token = db.query(OAuthToken).filter(
+            OAuthToken.user_id == user_id,
+            OAuthToken.provider == "google"
+        ).first()
+        
+        if existing_token:
+            # Update existing token
+            existing_token.access_token = encrypted_access_token
+            existing_token.refresh_token = encrypted_refresh_token
+            existing_token.expires_at = expires_at
+            existing_token.scopes = token_response.get("scope", "").split()
+            existing_token.updated_at = datetime.utcnow()
+        else:
+            # Create new token entry
+            new_token = OAuthToken(
+                user_id=user_id,
+                provider="google",
+                access_token=encrypted_access_token,
+                refresh_token=encrypted_refresh_token,
+                expires_at=expires_at,
+                scopes=token_response.get("scope", "").split(),
+                metadata={"token_type": token_response.get("token_type")}
+            )
+            db.add(new_token)
+        
+        db.commit()
+        
+        logger.info(f"Successfully stored Google tokens for user {user_id}")
+        
+        # Redirect to frontend success page
+        frontend_url = settings.CORS_ORIGINS[0]
+        return RedirectResponse(url=f"{frontend_url}/integrations/success?provider=google")
+    
+    except Exception as e:
+        logger.error(f"Error in Google OAuth callback: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
