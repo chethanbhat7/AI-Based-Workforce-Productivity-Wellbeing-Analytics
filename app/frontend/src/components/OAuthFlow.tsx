@@ -33,15 +33,15 @@ interface ServiceStatus {
   error?: string;
 }
 
-const API_URL = 'http://localhost:8000';
+const API_URL = (import.meta as any).env?.VITE_API_URL || 'https://ai-based-workforce-productivity-wel-livid.vercel.app/api';
 
 const SERVICE_OAUTH_URLS: Record<string, string> = {
-  'microsoft365': `${API_URL}/auth/microsoft/authorize`,
-  'slack': `${API_URL}/auth/slack/authorize`,
-  'google-sheets': `${API_URL}/auth/google/authorize`,
-  'jira': `${API_URL}/auth/jira/authorize`,
-  'asana': `${API_URL}/auth/asana/authorize`,
-  'github': `${API_URL}/auth/github/authorize`,
+  'microsoft365': `${API_URL}/auth/microsoft/login`,
+  'slack': `${API_URL}/auth/slack/login`,
+  'google-sheets': `${API_URL}/auth/google/login`,
+  'jira': `${API_URL}/auth/jira/login`,
+  'asana': `${API_URL}/auth/asana/login`,
+  'github': `${API_URL}/auth/github/login`,
 };
 
 const SERVICE_NAMES: Record<string, string> = {

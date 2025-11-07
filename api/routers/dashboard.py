@@ -4,8 +4,8 @@ from datetime import datetime, timedelta
 from typing import Optional
 import logging
 
-from database import get_db, Feature, WellbeingScore, User
-from routers.features import extract_features_for_user
+from database import get_db, User, OAuthToken, Feature, WellbeingScore
+# from routers.features import extract_features_for_user  # TODO: Fix this import
 
 logger = logging.getLogger(__name__)
 

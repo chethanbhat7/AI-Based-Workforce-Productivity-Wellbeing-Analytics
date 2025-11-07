@@ -3,8 +3,8 @@
  * Connects frontend to backend endpoints
  */
 
-// Use environment variable or default to localhost
-const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000';
+// Use environment variable or default to production URL
+const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'https://ai-based-workforce-productivity-wel-livid.vercel.app/api';
 
 interface ApiResponse<T> {
   data?: T;

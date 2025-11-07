@@ -29,11 +29,12 @@ class Settings(BaseSettings):
     ENCRYPTION_KEY: str = ""  # Fernet key for token encryption
     
     # CORS
-    CORS_ORIGINS: List[str] = [
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "http://127.0.0.1:3000"
-    ]
+    CORS_ORIGINS: str = "http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000,http://localhost:5173"
+    
+    @property
+    def cors_origins_list(self) -> List[str]:
+        """Parse CORS origins from comma-separated string"""
+        return [origin.strip() for origin in self.CORS_ORIGINS.split(",")]
     
     # Microsoft Graph OAuth2
     MICROSOFT_CLIENT_ID: str = ""
