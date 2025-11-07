@@ -10,8 +10,6 @@ import {
 } from '@mui/material';
 import {
   VideoCall,
-  Chat,
-  Assignment,
   AccessTime,
   TrendingUp,
   Speed,
@@ -69,8 +67,8 @@ export const WellbeingProfile = () => {
   const wellbeingScore = testScenario?.wellbeingScore ?? analytics?.wellbeingScore ?? generateValue(3, 50, 90);
   const meetingHours = analytics?.meetingHours ?? generateValue(5, 8, 18);
   const meetingCount = analytics?.meetingCount ?? generateValue(6, 12, 25);
-  const messagesSent = analytics?.messagesSent ?? generateValue(7, 150, 300);
-  const messagesReceived = analytics?.messagesReceived ?? generateValue(8, 120, 250);
+//  const messagesSent = analytics?.messagesSent ?? generateValue(7, 150, 300);
+ //const messagesReceived = analytics?.messagesReceived ?? generateValue(8, 120, 250);
   const earlyStarts = analytics?.earlyStarts ?? generateValue(9, 0, 4);
   const lateExits = analytics?.lateExits ?? generateValue(10, 0, 3);
   const lateStarts = analytics?.lateStarts ?? generateValue(11, 0, 2);
