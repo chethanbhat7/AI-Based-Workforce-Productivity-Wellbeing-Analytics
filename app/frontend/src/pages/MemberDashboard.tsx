@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { WellbeingProfile } from '../components/WellbeingProfile';
 import { NotificationBar } from '../components/NotificationBar';
+import { BurnoutNotificationService } from '../components/BurnoutNotificationService';
 import {
   Box,
   AppBar,
@@ -59,6 +60,9 @@ export const MemberDashboard = () => {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', bgcolor: '#fafafa' }}>
+      {/* Background service to check for burnout and create notifications */}
+      <BurnoutNotificationService />
+      
       {/* Header */}
       <AppBar position="static" sx={{ boxShadow: 2 }}>
         <Toolbar>

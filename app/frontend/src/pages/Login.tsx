@@ -16,6 +16,9 @@ import {
   DialogContent,
 } from '@mui/material';
 import { Work } from '@mui/icons-material';
+import { loginWithEmail } from '../firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../firebase/config';
 
 // ==================== VALIDATION UTILITIES ====================
 
@@ -103,8 +106,30 @@ export const Login = () => {
     setLoading(true);
 
     try {
+      // First, authenticate and get the user
+      const firebaseUser = await loginWithEmail(email.trim(), password);
+      
+      // Check if user has already completed integration setup
+      const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+      const userData = userDoc.data();
+      
+      // Now complete the login through AuthContext
       await login(email.trim(), password);
-      navigate('/');
+      
+      // Wait a moment for auth context to update
+      setTimeout(() => {
+        if (userData?.integrationsSetupAt) {
+          // User has already completed setup, go directly to dashboard
+          if (userData.role === 'supervisor') {
+            navigate('/supervisor-dashboard');
+          } else {
+            navigate('/member-dashboard');
+          }
+        } else {
+          // First-time login, redirect to integration setup
+          navigate('/integration-setup');
+        }
+      }, 100);
     } catch (err: any) {
       setGeneralError(err.message || 'Login failed.');
     } finally {

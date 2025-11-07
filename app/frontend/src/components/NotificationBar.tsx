@@ -3,13 +3,14 @@ import {
   IconButton, 
   Badge, 
   Menu, 
-  MenuItem, 
+  MenuItem,
   Typography, 
   Divider,
   List,
   ListItem,
   ListItemText,
   ListItemIcon,
+  Button,
 } from '@mui/material';
 import { 
   Notifications, 
@@ -18,9 +19,10 @@ import {
   Error as ErrorIcon,
   CheckCircle,
   Delete,
+  VolunteerActivism,
 } from '@mui/icons-material';
 import { useState, useEffect } from 'react';
-import { collection, query, where, getDocs, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, deleteDoc, doc, updateDoc, addDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from '../context/AuthContext';
 
@@ -30,6 +32,11 @@ interface Notification {
   severity: 'error' | 'warning' | 'info' | 'success';
   timestamp: string;
   read: boolean;
+  type?: string;
+  actionable?: boolean;
+  burnoutMemberId?: string;
+  burnoutMemberName?: string;
+  burnoutMemberEmail?: string;
 }
 
 export const NotificationBar = () => {
@@ -56,6 +63,11 @@ export const NotificationBar = () => {
             severity: data.severity || 'info',
             timestamp: data.timestamp ? new Date(data.timestamp).toLocaleString() : 'Just now',
             read: data.read || false,
+            type: data.type,
+            actionable: data.actionable,
+            burnoutMemberId: data.burnoutMemberId,
+            burnoutMemberName: data.burnoutMemberName,
+            burnoutMemberEmail: data.burnoutMemberEmail,
           });
         });
         
@@ -120,6 +132,61 @@ export const NotificationBar = () => {
       handleClose();
     } catch (error) {
       console.error('Error clearing notifications:', error);
+    }
+  };
+
+  const handleVolunteer = async (notification: Notification) => {
+    if (!user || !notification.burnoutMemberId) return;
+
+    try {
+      // Get supervisor info to send notification
+      const supervisorsRef = collection(db, 'users');
+      const supervisorQuery = query(
+        supervisorsRef,
+        where('role', '==', 'supervisor'),
+        where('teamNumber', '==', (user as any).teamNumber || '1')
+      );
+      
+      const supervisorSnapshot = await getDocs(supervisorQuery);
+      
+      if (!supervisorSnapshot.empty) {
+        const supervisorDoc = supervisorSnapshot.docs[0];
+        const supervisorId = supervisorDoc.id;
+        
+        // Create notification for supervisor
+        await addDoc(collection(db, 'notifications'), {
+          userId: supervisorId,
+          message: `${user.name} has volunteered to help ${notification.burnoutMemberName} who is experiencing high stress/burnout.`,
+          severity: 'info',
+          timestamp: new Date().toISOString(),
+          read: false,
+          volunteerId: user.id,
+          volunteerName: user.name,
+          volunteerEmail: user.email,
+          burnoutMemberId: notification.burnoutMemberId,
+          burnoutMemberName: notification.burnoutMemberName,
+          burnoutMemberEmail: notification.burnoutMemberEmail,
+          type: 'volunteer_offer',
+        });
+
+        // Create notification for the burnt-out member
+        await addDoc(collection(db, 'notifications'), {
+          userId: notification.burnoutMemberId,
+          message: `${user.name} has offered to help you with some tasks. Your supervisor has been notified.`,
+          severity: 'success',
+          timestamp: new Date().toISOString(),
+          read: false,
+          volunteerId: user.id,
+          volunteerName: user.name,
+          type: 'help_offered',
+        });
+
+        // Delete the original burnout alert notification
+        await deleteDoc(doc(db, 'notifications', notification.id));
+        setNotifications(prev => prev.filter(n => n.id !== notification.id));
+      }
+    } catch (error) {
+      console.error('Error volunteering:', error);
     }
   };
 
@@ -210,6 +277,7 @@ export const NotificationBar = () => {
                 <ListItem
                   sx={{
                     display: 'flex',
+                    flexDirection: 'column',
                     alignItems: 'flex-start',
                     gap: 1,
                     py: 2,
@@ -221,34 +289,55 @@ export const NotificationBar = () => {
                     },
                   }}
                 >
-                  <ListItemIcon sx={{ minWidth: 'auto', mt: 0.5 }}>
-                    {getSeverityIcon(notification.severity)}
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={notification.message}
-                    secondary={notification.timestamp}
-                    primaryTypographyProps={{
-                      variant: 'body2',
-                      sx: { fontWeight: notification.read ? 400 : 600 },
-                    }}
-                    secondaryTypographyProps={{
-                      variant: 'caption',
-                      sx: { color: '#7f8c8d' },
-                    }}
-                  />
-                  <IconButton
-                    size="small"
-                    onClick={() => handleDelete(notification.id)}
-                    sx={{
-                      color: '#95a5a6',
-                      '&:hover': {
-                        color: '#e74c3c',
-                        bgcolor: '#e74c3c15',
-                      },
-                    }}
-                  >
-                    <Delete sx={{ fontSize: 18 }} />
-                  </IconButton>
+                  <Box sx={{ display: 'flex', width: '100%', gap: 1 }}>
+                    <ListItemIcon sx={{ minWidth: 'auto', mt: 0.5 }}>
+                      {getSeverityIcon(notification.severity)}
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={notification.message}
+                      secondary={notification.timestamp}
+                      primaryTypographyProps={{
+                        variant: 'body2',
+                        sx: { fontWeight: notification.read ? 400 : 600 },
+                      }}
+                      secondaryTypographyProps={{
+                        variant: 'caption',
+                        sx: { color: '#7f8c8d' },
+                      }}
+                    />
+                    <IconButton
+                      size="small"
+                      onClick={() => handleDelete(notification.id)}
+                      sx={{
+                        color: '#95a5a6',
+                        '&:hover': {
+                          color: '#e74c3c',
+                          bgcolor: '#e74c3c15',
+                        },
+                      }}
+                    >
+                      <Delete sx={{ fontSize: 18 }} />
+                    </IconButton>
+                  </Box>
+                  
+                  {/* Show volunteer button for burnout alerts */}
+                  {notification.actionable && notification.type === 'burnout_alert' && (
+                    <Button
+                      size="small"
+                      variant="contained"
+                      startIcon={<VolunteerActivism />}
+                      onClick={() => handleVolunteer(notification)}
+                      sx={{
+                        ml: 4,
+                        bgcolor: '#3498db',
+                        '&:hover': {
+                          bgcolor: '#2980b9',
+                        },
+                      }}
+                    >
+                      Volunteer to Help
+                    </Button>
+                  )}
                 </ListItem>
                 {index < notifications.length - 1 && <Divider />}
               </Box>

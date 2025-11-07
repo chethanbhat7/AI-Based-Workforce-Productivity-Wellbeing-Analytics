@@ -5,6 +5,7 @@ import { TeamOverview } from '../components/TeamOverview';
 import { SupervisorProfile } from '../components/SupervisorProfile';
 import { MemberDetail } from '../components/MemberDetail';
 import { NotificationBar } from '../components/NotificationBar';
+import { BurnoutMonitoringService } from '../components/BurnoutMonitoringService';
 import {
   Box,
   AppBar,
@@ -170,6 +171,9 @@ export const SupervisorDashboard = () => {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', bgcolor: '#fafafa' }}>
+      {/* Burnout Monitoring Service - runs in background */}
+      <BurnoutMonitoringService />
+      
       {/* Header */}
       <AppBar position="static" sx={{ boxShadow: 2, background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
         <Toolbar>

@@ -170,10 +170,11 @@ export const MemberRegister = () => {
         teamNumber: formData.teamNumber.trim() || '1',
         phone: formData.phone.trim(),
         createdAt: new Date().toISOString(),
+        integrationsSetupAt: null, // Will be set after integration setup
       });
 
-      // Registration successful, navigate to login
-      navigate('/login');
+      // Registration successful, navigate to integration setup
+      navigate('/integration-setup');
     } catch (err: any) {
       // Provide user-friendly error messages
       if (err.message?.includes('auth/email-already-in-use')) {

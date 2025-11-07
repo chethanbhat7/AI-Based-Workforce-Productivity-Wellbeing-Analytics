@@ -6,6 +6,7 @@ import { SupervisorRegister } from './pages/SupervisorRegister'
 import { MemberRegister } from './pages/MemberRegister'
 import { SupervisorDashboard } from './pages/SupervisorDashboard'
 import { MemberDashboard } from './pages/MemberDashboard'
+import { IntegrationSetup } from './pages/IntegrationSetup'
 import './App.css'
 
 // Material UI Theme
@@ -57,14 +58,30 @@ function AppContent() {
       <Route path="/register/supervisor" element={<SupervisorRegister />} />
       <Route path="/register/member" element={<MemberRegister />} />
       
+      {/* Integration Setup Route */}
+      <Route
+        path="/integration-setup"
+        element={user ? <IntegrationSetup /> : <Navigate to="/login" replace />}
+      />
+      
       {/* Protected Routes */}
       <Route
-        path="/dashboard/supervisor"
+        path="/supervisor-dashboard"
         element={user && user.role === 'supervisor' ? <SupervisorDashboard /> : <Navigate to="/login" replace />}
       />
       <Route
-        path="/dashboard/member"
+        path="/member-dashboard"
         element={user && user.role === 'member' ? <MemberDashboard /> : <Navigate to="/login" replace />}
+      />
+      
+      {/* Legacy Routes - Keep for backwards compatibility */}
+      <Route
+        path="/dashboard/supervisor"
+        element={<Navigate to="/supervisor-dashboard" replace />}
+      />
+      <Route
+        path="/dashboard/member"
+        element={<Navigate to="/member-dashboard" replace />}
       />
       
       {/* Home Route - Redirect based on role */}
@@ -73,9 +90,9 @@ function AppContent() {
         element={
           user ? (
             user.role === 'supervisor' ? (
-              <Navigate to="/dashboard/supervisor" replace />
+              <Navigate to="/supervisor-dashboard" replace />
             ) : (
-              <Navigate to="/dashboard/member" replace />
+              <Navigate to="/member-dashboard" replace />
             )
           ) : (
             <Navigate to="/login" replace />

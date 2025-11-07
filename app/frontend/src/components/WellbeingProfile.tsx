@@ -18,7 +18,7 @@ import {
   Logout,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
-import { BurnoutAlerts } from './BurnoutAlerts';
+import { generateConsistentValue, getTestScenarioValues } from '../utils/consistentValues';
 
 interface UserAnalytics {
   taskCompletionRate?: number;
@@ -42,19 +42,16 @@ interface UserAnalytics {
 export const WellbeingProfile = () => {
   const { user } = useAuth();
   
-  // Generate consistent dummy values based on email hash (same as TeamOverview)
-  const generateConsistentValue = (email: string, seed: number, min: number, max: number): number => {
-    let hash = 0;
-    const str = email + seed.toString();
-    for (let i = 0; i < str.length; i++) {
-      hash = ((hash << 5) - hash) + str.charCodeAt(i);
-      hash = hash & hash;
-    }
-    return min + (Math.abs(hash) % (max - min + 1));
-  };
-
   const email = user?.email || '';
   
+  // Check for test scenario values first
+  const testScenario = getTestScenarioValues(email);
+  
+  // Generate consistent dummy values based on email hash (same as TeamOverview)
+  const generateValue = (seed: number, min: number, max: number): number => {
+    return generateConsistentValue(email, seed, min, max);
+  };
+
   // TODO: Fetch real analytics data from Firestore
   // For now, use consistent dummy values based on email
   const getUserAnalytics = (): UserAnalytics | null => {
@@ -65,22 +62,22 @@ export const WellbeingProfile = () => {
   
   const analytics = getUserAnalytics();
   
-  // Use real data if available, otherwise generate consistent dummy values
-  const taskCompletionRate = analytics?.taskCompletionRate ?? generateConsistentValue(email, 1, 60, 100);
-  const loggedHours = analytics?.loggedHours ?? generateConsistentValue(email, 2, 30, 45);
-  const wellbeingScore = analytics?.wellbeingScore ?? generateConsistentValue(email, 3, 50, 90);
-  const meetingHours = analytics?.meetingHours ?? generateConsistentValue(email, 5, 8, 18);
-  const meetingCount = analytics?.meetingCount ?? generateConsistentValue(email, 6, 12, 25);
-  const messagesSent = analytics?.messagesSent ?? generateConsistentValue(email, 7, 150, 300);
-  const messagesReceived = analytics?.messagesReceived ?? generateConsistentValue(email, 8, 120, 250);
-  const earlyStarts = analytics?.earlyStarts ?? generateConsistentValue(email, 9, 0, 4);
-  const lateExits = analytics?.lateExits ?? generateConsistentValue(email, 10, 0, 3);
-  const lateStarts = analytics?.lateStarts ?? generateConsistentValue(email, 11, 0, 2);
-  const earlyExits = analytics?.earlyExits ?? generateConsistentValue(email, 12, 0, 1);
+  // Use test scenario if available, otherwise real data, otherwise generate consistent dummy values
+  const taskCompletionRate = testScenario?.taskCompletionRate ?? analytics?.taskCompletionRate ?? generateValue(1, 60, 100);
+  const loggedHours = analytics?.loggedHours ?? generateValue(2, 30, 45);
+  const wellbeingScore = testScenario?.wellbeingScore ?? analytics?.wellbeingScore ?? generateValue(3, 50, 90);
+  const meetingHours = analytics?.meetingHours ?? generateValue(5, 8, 18);
+  const meetingCount = analytics?.meetingCount ?? generateValue(6, 12, 25);
+  const messagesSent = analytics?.messagesSent ?? generateValue(7, 150, 300);
+  const messagesReceived = analytics?.messagesReceived ?? generateValue(8, 120, 250);
+  const earlyStarts = analytics?.earlyStarts ?? generateValue(9, 0, 4);
+  const lateExits = analytics?.lateExits ?? generateValue(10, 0, 3);
+  const lateStarts = analytics?.lateStarts ?? generateValue(11, 0, 2);
+  const earlyExits = analytics?.earlyExits ?? generateValue(12, 0, 1);
   
   // Calculate burnout risk and efficiency based on other metrics
-  // const burnoutRisk = analytics?.burnoutRisk ?? Math.min(100, Math.max(0, 100 - wellbeingScore + (meetingHours > 15 ? 20 : 0)));
-  const burnoutRisk = 100;
+ const burnoutRisk = analytics?.burnoutRisk ?? Math.min(100, Math.max(0, 100 - wellbeingScore + (meetingHours > 15 ? 20 : 0)));
+
   const efficiency = analytics?.efficiency ?? Math.round((taskCompletionRate + Math.min(100, (loggedHours / 40) * 100)) / 2);
 
   return (
@@ -554,11 +551,6 @@ export const WellbeingProfile = () => {
           245 messages sent - actively engaging with your team
         </Typography>
       </Paper>
-    </Box>
-
-    {/* Burnout Alerts Section */}
-    <Box sx={{ mt: 4 }}>
-      <BurnoutAlerts />
     </Box>
   </Box>
 </Box>
