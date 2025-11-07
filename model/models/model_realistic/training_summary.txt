@@ -1,0 +1,85 @@
+
+================================================================================
+WORKFORCE WELLBEING ANALYSIS - MODEL TRAINING SUMMARY
+================================================================================
+
+Training Date: 2025-11-08 02:39:58
+Dataset: realistic_emp_data.csv
+Total Samples: 300
+Training Samples: 240
+Test Samples: 60
+Total Features: 31
+
+================================================================================
+MODEL 1: BURNOUT RISK SCORE
+================================================================================
+Algorithm: RandomForest
+Cross-Validation R²: 0.5726 (+/- 0.1081)
+Training R²: 0.9433
+Test R²: 0.6448
+Test RMSE: 0.0985
+Test MAE: 0.0765
+
+Top 5 Important Features:
+                feature  importance
+          meeting_hours    0.483526
+work_life_balance_score    0.122219
+     daily_active_hours    0.100805
+         overtime_hours    0.032954
+           hours_logged    0.020445
+
+================================================================================
+MODEL 2: WELLBEING SCORE
+================================================================================
+Algorithm: RandomForest
+Cross-Validation R²: 0.4686 (+/- 0.0526)
+Training R²: 0.9179
+Test R²: 0.5677
+Test RMSE: 6.1552
+Test MAE: 4.8897
+
+Top 5 Important Features:
+                feature  importance
+          meeting_hours    0.182678
+  team_engagement_score    0.176224
+work_life_balance_score    0.113606
+     daily_active_hours    0.096043
+       focus_time_hours    0.065560
+
+================================================================================
+MODEL 3: EFFICIENCY SCORE
+================================================================================
+Algorithm: RandomForest
+Cross-Validation R²: 0.9180 (+/- 0.0287)
+Training R²: 0.9867
+Test R²: 0.9270
+Test RMSE: 7.0929
+Test MAE: 4.9720
+
+Top 5 Important Features:
+             feature  importance
+        role_Manager    0.315578
+       role_Designer    0.303418
+task_completion_rate    0.143633
+    role_QA Engineer    0.133083
+       meeting_hours    0.039253
+
+================================================================================
+FILES SAVED
+================================================================================
+- burnout_risk_model.pkl
+- wellbeing_model.pkl
+- efficiency_model.pkl
+- burnout_risk_scaler.pkl
+- wellbeing_scaler.pkl
+- efficiency_scaler.pkl
+- burnout_risk_feature_importance.csv
+- wellbeing_feature_importance.csv
+- efficiency_feature_importance.csv
+- feature_columns.json
+- model_metrics.json
+- training_summary.txt
+
+================================================================================
+TRAINING COMPLETE
+================================================================================

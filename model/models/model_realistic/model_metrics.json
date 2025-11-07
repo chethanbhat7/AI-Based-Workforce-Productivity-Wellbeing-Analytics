@@ -1,0 +1,40 @@
+{
+  "burnout_risk": {
+    "model_name": "RandomForest",
+    "cv_mean_r2": 0.5725760733781339,
+    "cv_std_r2": 0.10813076974608112,
+    "train_r2": 0.9433017156737026,
+    "test_r2": 0.6448037446168702,
+    "train_rmse": 0.04343063365949431,
+    "test_rmse": 0.09853112943212967,
+    "train_mae": 0.034848111904165695,
+    "test_mae": 0.07645249203716632
+  },
+  "wellbeing": {
+    "model_name": "RandomForest",
+    "cv_mean_r2": 0.46858426148605387,
+    "cv_std_r2": 0.05261161448766025,
+    "train_r2": 0.9178575908460214,
+    "test_r2": 0.5677050940926213,
+    "train_rmse": 2.4303655014940864,
+    "test_rmse": 6.1551785361298315,
+    "train_mae": 1.9327321588964892,
+    "test_mae": 4.889679822410824
+  },
+  "efficiency": {
+    "model_name": "RandomForest",
+    "cv_mean_r2": 0.9180416830448678,
+    "cv_std_r2": 0.02870792625857594,
+    "train_r2": 0.9867032064084387,
+    "test_r2": 0.9270084475498026,
+    "train_rmse": 3.014482518963552,
+    "test_rmse": 7.092863718906633,
+    "train_mae": 2.3760402448559383,
+    "test_mae": 4.971951102247873
+  },
+  "training_date": "2025-11-08 02:39:58",
+  "dataset": "realistic_emp_data.csv",
+  "total_samples": 300,
+  "total_features": 31,
+  "test_size": 0.2
+}

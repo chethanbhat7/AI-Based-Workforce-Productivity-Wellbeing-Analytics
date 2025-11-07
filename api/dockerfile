@@ -1,0 +1,17 @@
+FROM python:3.11-slim
+
+# Avoid pyc files & force stdout flushing
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+# If you have requirements.txt
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt || true
+
+# Copy your code
+COPY . .
+
+# Start the app (change this command for your framework)
+CMD ["python", "main.py"]

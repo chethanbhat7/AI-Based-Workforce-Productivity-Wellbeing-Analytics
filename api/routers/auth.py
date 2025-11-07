@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 # TEST MODE - Set to False for real OAuth, True for testing
-TEST_MODE = True
+TEST_MODE = False
 
 # OAuth state storage (use Redis in production)
 oauth_states = {}
@@ -101,10 +101,28 @@ async def microsoft_login(user_id: str, state: str = None, db: Session = Depends
     """Initiate Microsoft OAuth2 flow"""
     if TEST_MODE:
         logger.info(f"TEST MODE: Microsoft OAuth for user {user_id}")
-        return RedirectResponse(url=f"/auth/microsoft/callback?code=TEST&state={state or user_id}")
+        return RedirectResponse(url=f"/api/auth/microsoft/callback?code=TEST&state={state or user_id}")
     
-    # Real OAuth would redirect to Microsoft here
-    raise HTTPException(status_code=501, detail="Real OAuth not configured")
+    try:
+        # Generate state for CSRF protection
+        csrf_state = secrets.token_urlsafe(32)
+        oauth_states[csrf_state] = {
+            "user_id": user_id,
+            "original_state": state,
+            "provider": "microsoft",
+            "created_at": datetime.utcnow()
+        }
+        
+        from integrations.microsoft_graph import MicrosoftGraphOAuth
+        ms_oauth = MicrosoftGraphOAuth()
+        auth_url = ms_oauth.get_authorization_url(csrf_state)
+        
+        logger.info(f"Redirecting user {user_id} to Microsoft OAuth")
+        return RedirectResponse(url=auth_url)
+    
+    except Exception as e:
+        logger.error(f"Microsoft OAuth initiation error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/microsoft/callback")
@@ -116,8 +134,49 @@ async def microsoft_callback(code: str, state: str, db: Session = Depends(get_db
             logger.info(f"TEST: Microsoft token created for user {state}")
             return HTMLResponse(content=get_success_html("microsoft"))
         
-        # Real OAuth token exchange would happen here
-        raise HTTPException(status_code=501, detail="Real OAuth not configured")
+        # Validate state
+        if state not in oauth_states:
+            return HTMLResponse(content=get_error_html("microsoft", "Invalid state - session expired"))
+        
+        state_data = oauth_states.pop(state)
+        user_id = state_data["user_id"]
+        
+        # Exchange code for tokens
+        from integrations.microsoft_graph import MicrosoftGraphOAuth
+        ms_oauth = MicrosoftGraphOAuth()
+        token_response = await ms_oauth.exchange_code_for_token(code)
+        
+        # Encrypt and store tokens
+        encrypted_access = encrypt_token(token_response["access_token"])
+        encrypted_refresh = encrypt_token(token_response.get("refresh_token", ""))
+        
+        expires_at = datetime.utcnow() + timedelta(seconds=token_response.get("expires_in", 3600))
+        
+        # Store in database
+        existing = db.query(OAuthToken).filter(
+            OAuthToken.user_id == user_id,
+            OAuthToken.provider == "microsoft"
+        ).first()
+        
+        if existing:
+            existing.access_token = encrypted_access
+            existing.refresh_token = encrypted_refresh
+            existing.expires_at = expires_at
+            existing.updated_at = datetime.utcnow()
+        else:
+            new_token = OAuthToken(
+                user_id=user_id,
+                provider="microsoft",
+                access_token=encrypted_access,
+                refresh_token=encrypted_refresh,
+                expires_at=expires_at,
+                scopes=settings.MICROSOFT_SCOPES
+            )
+            db.add(new_token)
+        
+        db.commit()
+        logger.info(f"Microsoft token stored for user {user_id}")
+        return HTMLResponse(content=get_success_html("microsoft"))
     
     except Exception as e:
         logger.error(f"Microsoft callback error: {e}")
@@ -130,9 +189,28 @@ async def slack_login(user_id: str, state: str = None, db: Session = Depends(get
     """Initiate Slack OAuth2 flow"""
     if TEST_MODE:
         logger.info(f"TEST MODE: Slack OAuth for user {user_id}")
-        return RedirectResponse(url=f"/auth/slack/callback?code=TEST&state={state or user_id}")
+        return RedirectResponse(url=f"/api/auth/slack/callback?code=TEST&state={state or user_id}")
     
-    raise HTTPException(status_code=501, detail="Real OAuth not configured")
+    try:
+        # Generate state for CSRF protection
+        csrf_state = secrets.token_urlsafe(32)
+        oauth_states[csrf_state] = {
+            "user_id": user_id,
+            "original_state": state,
+            "provider": "slack",
+            "created_at": datetime.utcnow()
+        }
+        
+        from integrations.slack import SlackOAuth
+        slack_oauth = SlackOAuth()
+        auth_url = slack_oauth.get_authorization_url(csrf_state)
+        
+        logger.info(f"Redirecting user {user_id} to Slack OAuth")
+        return RedirectResponse(url=auth_url)
+    
+    except Exception as e:
+        logger.error(f"Slack OAuth initiation error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/slack/callback")
@@ -144,7 +222,47 @@ async def slack_callback(code: str, state: str, db: Session = Depends(get_db)):
             logger.info(f"TEST: Slack token created for user {state}")
             return HTMLResponse(content=get_success_html("slack"))
         
-        raise HTTPException(status_code=501, detail="Real OAuth not configured")
+        # Validate state
+        if state not in oauth_states:
+            return HTMLResponse(content=get_error_html("slack", "Invalid state - session expired"))
+        
+        state_data = oauth_states.pop(state)
+        user_id = state_data["user_id"]
+        
+        # Exchange code for tokens
+        from integrations.slack import SlackOAuth
+        slack_oauth = SlackOAuth()
+        token_response = await slack_oauth.exchange_code_for_token(code)
+        
+        # Encrypt and store tokens
+        encrypted_access = encrypt_token(token_response["access_token"])
+        
+        # Slack tokens don't expire
+        expires_at = datetime.utcnow() + timedelta(days=365)
+        
+        # Store in database
+        existing = db.query(OAuthToken).filter(
+            OAuthToken.user_id == user_id,
+            OAuthToken.provider == "slack"
+        ).first()
+        
+        if existing:
+            existing.access_token = encrypted_access
+            existing.updated_at = datetime.utcnow()
+        else:
+            new_token = OAuthToken(
+                user_id=user_id,
+                provider="slack",
+                access_token=encrypted_access,
+                refresh_token="",
+                expires_at=expires_at,
+                scopes=settings.SLACK_SCOPES
+            )
+            db.add(new_token)
+        
+        db.commit()
+        logger.info(f"Slack token stored for user {user_id}")
+        return HTMLResponse(content=get_success_html("slack"))
     
     except Exception as e:
         logger.error(f"Slack callback error: {e}")
@@ -157,7 +275,7 @@ async def google_login(user_id: str, state: str = None, db: Session = Depends(ge
     """Initiate Google OAuth2 flow"""
     if TEST_MODE:
         logger.info(f"TEST MODE: Google OAuth for user {user_id}")
-        return RedirectResponse(url=f"/auth/google/callback?code=TEST&state={state or user_id}")
+        return RedirectResponse(url=f"/api/auth/google/callback?code=TEST&state={state or user_id}")
     
     try:
         # Generate state for CSRF protection
@@ -244,9 +362,33 @@ async def jira_login(user_id: str, state: str = None, db: Session = Depends(get_
     """Initiate Jira OAuth2 flow"""
     if TEST_MODE:
         logger.info(f"TEST MODE: Jira OAuth for user {user_id}")
-        return RedirectResponse(url=f"/auth/jira/callback?code=TEST&state={state or user_id}")
+        return RedirectResponse(url=f"/api/auth/jira/callback?code=TEST&state={state or user_id}")
     
-    raise HTTPException(status_code=501, detail="Real OAuth not configured")
+    try:
+        # Generate state for CSRF protection
+        csrf_state = secrets.token_urlsafe(32)
+        oauth_states[csrf_state] = {
+            "user_id": user_id,
+            "original_state": state,
+            "provider": "jira",
+            "created_at": datetime.utcnow()
+        }
+        
+        from integrations.jira import JiraOAuth
+        jira_oauth = JiraOAuth(
+            client_id=settings.JIRA_CLIENT_ID,
+            client_secret=settings.JIRA_CLIENT_SECRET,
+            redirect_uri=settings.JIRA_REDIRECT_URI,
+            scopes=["read:jira-work", "read:jira-user"]
+        )
+        auth_url = jira_oauth.get_authorization_url(csrf_state)
+        
+        logger.info(f"Redirecting user {user_id} to Jira OAuth")
+        return RedirectResponse(url=auth_url)
+    
+    except Exception as e:
+        logger.error(f"Jira OAuth initiation error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/jira/callback")
@@ -258,7 +400,54 @@ async def jira_callback(code: str, state: str, db: Session = Depends(get_db)):
             logger.info(f"TEST: Jira token created for user {state}")
             return HTMLResponse(content=get_success_html("jira"))
         
-        raise HTTPException(status_code=501, detail="Real OAuth not configured")
+        # Validate state
+        if state not in oauth_states:
+            return HTMLResponse(content=get_error_html("jira", "Invalid state - session expired"))
+        
+        state_data = oauth_states.pop(state)
+        user_id = state_data["user_id"]
+        
+        # Exchange code for tokens
+        from integrations.jira import JiraOAuth
+        jira_oauth = JiraOAuth(
+            client_id=settings.JIRA_CLIENT_ID,
+            client_secret=settings.JIRA_CLIENT_SECRET,
+            redirect_uri=settings.JIRA_REDIRECT_URI,
+            scopes=["read:jira-work", "read:jira-user"]
+        )
+        token_response = await jira_oauth.exchange_code_for_token(code)
+        
+        # Encrypt and store tokens
+        encrypted_access = encrypt_token(token_response["access_token"])
+        encrypted_refresh = encrypt_token(token_response.get("refresh_token", ""))
+        
+        expires_at = datetime.utcnow() + timedelta(seconds=token_response.get("expires_in", 3600))
+        
+        # Store in database
+        existing = db.query(OAuthToken).filter(
+            OAuthToken.user_id == user_id,
+            OAuthToken.provider == "jira"
+        ).first()
+        
+        if existing:
+            existing.access_token = encrypted_access
+            existing.refresh_token = encrypted_refresh
+            existing.expires_at = expires_at
+            existing.updated_at = datetime.utcnow()
+        else:
+            new_token = OAuthToken(
+                user_id=user_id,
+                provider="jira",
+                access_token=encrypted_access,
+                refresh_token=encrypted_refresh,
+                expires_at=expires_at,
+                scopes=["read:jira-work", "read:jira-user"]
+            )
+            db.add(new_token)
+        
+        db.commit()
+        logger.info(f"Jira token stored for user {user_id}")
+        return HTMLResponse(content=get_success_html("jira"))
     
     except Exception as e:
         logger.error(f"Jira callback error: {e}")
@@ -271,9 +460,32 @@ async def asana_login(user_id: str, state: str = None, db: Session = Depends(get
     """Initiate Asana OAuth2 flow"""
     if TEST_MODE:
         logger.info(f"TEST MODE: Asana OAuth for user {user_id}")
-        return RedirectResponse(url=f"/auth/asana/callback?code=TEST&state={state or user_id}")
+        return RedirectResponse(url=f"/api/auth/asana/callback?code=TEST&state={state or user_id}")
     
-    raise HTTPException(status_code=501, detail="Real OAuth not configured")
+    try:
+        # Generate state for CSRF protection
+        csrf_state = secrets.token_urlsafe(32)
+        oauth_states[csrf_state] = {
+            "user_id": user_id,
+            "original_state": state,
+            "provider": "asana",
+            "created_at": datetime.utcnow()
+        }
+        
+        from integrations.asana import AsanaOAuth
+        asana_oauth = AsanaOAuth(
+            client_id=settings.ASANA_CLIENT_ID,
+            client_secret=settings.ASANA_CLIENT_SECRET,
+            redirect_uri=settings.ASANA_REDIRECT_URI
+        )
+        auth_url = asana_oauth.get_authorization_url(csrf_state)
+        
+        logger.info(f"Redirecting user {user_id} to Asana OAuth")
+        return RedirectResponse(url=auth_url)
+    
+    except Exception as e:
+        logger.error(f"Asana OAuth initiation error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/asana/callback")
@@ -285,7 +497,53 @@ async def asana_callback(code: str, state: str, db: Session = Depends(get_db)):
             logger.info(f"TEST: Asana token created for user {state}")
             return HTMLResponse(content=get_success_html("asana"))
         
-        raise HTTPException(status_code=501, detail="Real OAuth not configured")
+        # Validate state
+        if state not in oauth_states:
+            return HTMLResponse(content=get_error_html("asana", "Invalid state - session expired"))
+        
+        state_data = oauth_states.pop(state)
+        user_id = state_data["user_id"]
+        
+        # Exchange code for tokens
+        from integrations.asana import AsanaOAuth
+        asana_oauth = AsanaOAuth(
+            client_id=settings.ASANA_CLIENT_ID,
+            client_secret=settings.ASANA_CLIENT_SECRET,
+            redirect_uri=settings.ASANA_REDIRECT_URI
+        )
+        token_response = await asana_oauth.exchange_code_for_token(code)
+        
+        # Encrypt and store tokens
+        encrypted_access = encrypt_token(token_response["access_token"])
+        encrypted_refresh = encrypt_token(token_response.get("refresh_token", ""))
+        
+        expires_at = datetime.utcnow() + timedelta(seconds=token_response.get("expires_in", 3600))
+        
+        # Store in database
+        existing = db.query(OAuthToken).filter(
+            OAuthToken.user_id == user_id,
+            OAuthToken.provider == "asana"
+        ).first()
+        
+        if existing:
+            existing.access_token = encrypted_access
+            existing.refresh_token = encrypted_refresh
+            existing.expires_at = expires_at
+            existing.updated_at = datetime.utcnow()
+        else:
+            new_token = OAuthToken(
+                user_id=user_id,
+                provider="asana",
+                access_token=encrypted_access,
+                refresh_token=encrypted_refresh,
+                expires_at=expires_at,
+                scopes=["default"]
+            )
+            db.add(new_token)
+        
+        db.commit()
+        logger.info(f"Asana token stored for user {user_id}")
+        return HTMLResponse(content=get_success_html("asana"))
     
     except Exception as e:
         logger.error(f"Asana callback error: {e}")
@@ -298,7 +556,7 @@ async def github_login(user_id: str, state: str = None, db: Session = Depends(ge
     """Initiate GitHub OAuth2 flow"""
     if TEST_MODE:
         logger.info(f"TEST MODE: GitHub OAuth for user {user_id}")
-        return RedirectResponse(url=f"/auth/github/callback?code=TEST&state={state or user_id}")
+        return RedirectResponse(url=f"/api/auth/github/callback?code=TEST&state={state or user_id}")
     
     try:
         # Generate state for CSRF protection
