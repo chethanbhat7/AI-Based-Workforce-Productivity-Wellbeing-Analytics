@@ -1,20 +1,20 @@
 """
-Feature Extraction Router
-Extracts ML features from raw API data
+Feature Extraction and Prediction Router
+Handles ML feature extraction and predictions
 """
-from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
+from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from typing import Optional, List
 import logging
 
-from database import get_db, Feature, DataFetch
-from utils.feature_extraction import feature_extractor
-from utils.preprocessing import data_preprocessor, data_anonymizer
+from database import get_db, OAuthToken
+from services.feature_extraction import FeatureExtractor
+from services.prediction import get_prediction_service
+from routers.data import get_valid_token
 from integrations.microsoft_graph import MicrosoftGraphAPI
 from integrations.slack import SlackAPI
 from integrations.jira import JiraAPI
-from routers.data import get_valid_token
 
 logger = logging.getLogger(__name__)
 
@@ -23,311 +23,330 @@ router = APIRouter()
 
 @router.get("/")
 async def list_features():
-    """List available features matching employee_data.csv schema"""
+    """List available feature extraction and prediction endpoints"""
     return {
-        "status": "Feature extraction service active",
-        "feature_schema": {
-            "communication": [
-                "meeting_hours_per_week",
-                "meeting_counts_per_week",
-                "messages_sent_per_day",
-                "messages_received_per_day",
-                "avg_response_latency_min",
-                "communication_burstiness",
-                "after_hours_message_ratio",
-                "communication_balance",
-                "conversation_length_avg"
-            ],
-            "task_management": [
-                "avg_tasks_assigned_per_week",
-                "avg_tasks_completed_per_week",
-                "task_completion_rate",
-                "avg_task_age_days",
-                "overdue_task_ratio",
-                "task_comment_sentiment_mean"
-            ],
-            "work_hours": [
-                "logged_hours_per_week",
-                "variance_in_work_hours",
-                "late_start_count_per_month",
-                "early_exit_count_per_month",
-                "absenteeism_rate",
-                "avg_break_length_minutes"
-            ],
-            "performance": [
-                "performance_score",
-                "burnout_risk_score"
-            ]
-        }
+        "status": "active",
+        "endpoints": {
+            "predict": "/features/predict/{user_id}",
+            "extract": "/features/extract/{user_id}",
+            "feature_importance": "/features/importance/{target}",
+            "batch_predict": "/features/predict/batch",
+            "supported_integrations": ["microsoft", "slack", "jira", "asana"]
+        },
+        "model_targets": [
+            "performance_score",
+            "burnout_risk_score"
+        ]
     }
 
 
 @router.post("/extract/{user_id}")
-async def extract_features_for_user(
+async def extract_features(
     user_id: str,
-    days_back: int = 14,
     providers: Optional[List[str]] = None,
+    days_back: int = 14,
     db: Session = Depends(get_db)
 ):
     """
-    Extract all ML features for a user from all connected providers
-    
-    This endpoint:
-    1. Fetches data from all connected providers
-    2. Preprocesses and anonymizes the data
-    3. Extracts ML features
-    4. Stores features in database
-    5. Returns feature vector
+    Extract ML features from integrated data sources
+
+    Args:
+        user_id: User ID to extract features for
+        providers: List of data providers to use (defaults to all available)
+        days_back: Number of days of historical data to analyze
+
+    Returns:
+        Dictionary of extracted features
     """
     try:
         # Default to all providers if none specified
         if not providers:
             providers = ["microsoft", "slack", "jira"]
-        
+
         # Calculate date range
         end_date = datetime.utcnow()
         start_date = end_date - timedelta(days=days_back)
-        
+
         # Initialize data containers
-        calendar_events = []
-        teams_messages = []
-        slack_messages = []
-        emails = []
-        jira_issues = []
-        jira_worklogs = []
-        
-        # Fetch from Microsoft Graph
+        calendar_events = None
+        messages = None
+        tasks = None
+        worklogs = None
+        message_source = "teams"
+        task_source = "jira"
+
+        # Fetch from Microsoft Graph (calendar, teams messages)
         if "microsoft" in providers:
             try:
                 access_token = await get_valid_token(user_id, "microsoft", db)
                 graph_api = MicrosoftGraphAPI(access_token)
-                
+
+                logger.info(f"Fetching Microsoft data for user {user_id}")
+
                 # Fetch calendar events
                 calendar_events = await graph_api.get_calendar_events(start_date, end_date)
                 logger.info(f"Fetched {len(calendar_events)} calendar events")
-                
-                # Fetch emails (metadata only)
-                emails = await graph_api.get_emails(start_date, end_date)
-                logger.info(f"Fetched {len(emails)} emails")
-                
-                # Fetch Teams messages (will be anonymized)
-                teams_messages = await graph_api.get_teams_messages(start_date, end_date)
-                logger.info(f"Fetched {len(teams_messages)} Teams messages")
-                
+
+                # Fetch Teams messages
+                messages = await graph_api.get_teams_messages(start_date, end_date)
+                logger.info(f"Fetched {len(messages)} Teams messages")
+                message_source = "teams"
+
             except Exception as e:
                 logger.warning(f"Error fetching Microsoft data: {e}")
-        
+
         # Fetch from Slack
         if "slack" in providers:
             try:
                 access_token = await get_valid_token(user_id, "slack", db)
                 slack_api = SlackAPI(access_token)
-                
-                slack_messages = await slack_api.get_user_messages(start_date, end_date)
-                logger.info(f"Fetched {len(slack_messages)} Slack messages")
-                
+
+                logger.info(f"Fetching Slack data for user {user_id}")
+
+                # Fetch Slack messages (if not already have messages from Teams)
+                if not messages:
+                    messages = await slack_api.get_user_messages(start_date, end_date)
+                    logger.info(f"Fetched {len(messages)} Slack messages")
+                    message_source = "slack"
+
             except Exception as e:
                 logger.warning(f"Error fetching Slack data: {e}")
-        
+
         # Fetch from Jira
         if "jira" in providers:
             try:
                 access_token = await get_valid_token(user_id, "jira", db)
-                
+
                 # Get cloud_id from token metadata
-                from database import OAuthToken
                 token_record = db.query(OAuthToken).filter(
                     OAuthToken.user_id == user_id,
                     OAuthToken.provider == "jira"
                 ).first()
-                
-                if token_record and token_record.metadata.get("cloud_id"):
-                    cloud_id = token_record.metadata["cloud_id"]
+
+                cloud_id = token_record.metadata.get("cloud_id") if token_record else None
+                if cloud_id:
                     jira_api = JiraAPI(access_token, cloud_id)
-                    
+
+                    logger.info(f"Fetching Jira data for user {user_id}")
+
                     # Get user info
                     user_info = await jira_api.get_current_user()
                     account_id = user_info["account_id"]
-                    
+
                     # Fetch issues and worklogs
-                    jira_issues = await jira_api.get_user_issues(
-                        account_id, start_date, end_date, max_results=500
-                    )
-                    jira_worklogs = await jira_api.get_user_worklogs(
-                        account_id, start_date, end_date
-                    )
-                    logger.info(f"Fetched {len(jira_issues)} Jira issues and {len(jira_worklogs)} worklogs")
-                
+                    tasks = await jira_api.get_user_issues(account_id, start_date, end_date, max_results=500)
+                    worklogs = await jira_api.get_user_worklogs(account_id, start_date, end_date)
+
+                    logger.info(f"Fetched {len(tasks)} Jira issues and {len(worklogs)} worklogs")
+                    task_source = "jira"
+
             except Exception as e:
                 logger.warning(f"Error fetching Jira data: {e}")
-        
-        # === PREPROCESSING PIPELINE ===
-        logger.info("Starting data preprocessing with anonymization...")
-        
-        preprocessed_data = data_preprocessor.preprocess_all_data(
+
+        # Extract features using FeatureExtractor
+        features = FeatureExtractor.extract_all_features(
             calendar_events=calendar_events,
-            teams_messages=teams_messages,
-            slack_messages=slack_messages,
-            emails=emails,
-            jira_issues=jira_issues
+            messages=messages,
+            tasks=tasks,
+            worklogs=worklogs,
+            message_source=message_source,
+            task_source=task_source
         )
-        
-        logger.info("✓ Data preprocessing complete. Teams messages are fully anonymized.")
-        
-        # === FEATURE EXTRACTION ===
-        logger.info("Extracting ML features...")
-        
-        # Combine all messages for communication features
-        all_messages = (
-            preprocessed_data["teams_messages"] + 
-            preprocessed_data["slack_messages"]
-        )
-        
-        # Extract features
-        features = feature_extractor.extract_all_features(
-            calendar_events=preprocessed_data["calendar_events"],
-            messages=all_messages,
-            tasks=preprocessed_data["jira_issues"],
-            worklogs=jira_worklogs,
-            user_id=user_id,
-            start_date=start_date,
-            end_date=end_date
-        )
-        
-        logger.info("✓ Feature extraction complete")
-        
-        # === STORE FEATURES IN DATABASE ===
-        feature_date = datetime.utcnow()
-        
-        for feature_name, feature_value in features.items():
-            feature_record = Feature(
-                user_id=user_id,
-                date=feature_date,
-                provider="aggregated",
-                feature_name=feature_name,
-                feature_value=feature_value,
-                metadata={
-                    "days_back": days_back,
-                    "providers": providers,
-                    "start_date": start_date.isoformat(),
-                    "end_date": end_date.isoformat()
-                }
-            )
-            db.add(feature_record)
-        
-        db.commit()
-        
-        logger.info(f"✓ Stored {len(features)} features in database")
-        
+
         return {
             "status": "success",
             "user_id": user_id,
             "date_range": {
                 "start": start_date.isoformat(),
-                "end": end_date.isoformat(),
-                "days": days_back
+                "end": end_date.isoformat()
             },
             "providers_used": providers,
             "data_counts": {
-                "calendar_events": len(calendar_events),
-                "teams_messages": len(teams_messages),
-                "slack_messages": len(slack_messages),
-                "emails": len(emails),
-                "jira_issues": len(jira_issues),
-                "jira_worklogs": len(jira_worklogs)
+                "calendar_events": len(calendar_events) if calendar_events else 0,
+                "messages": len(messages) if messages else 0,
+                "tasks": len(tasks) if tasks else 0,
+                "worklogs": len(worklogs) if worklogs else 0
             },
-            "features": features,
-            "privacy_notice": "Teams messages have been fully anonymized. Content is only accessible to ML model."
+            "features": features
         }
-    
+
     except Exception as e:
-        logger.error(f"Error extracting features: {e}", exc_info=True)
+        logger.error(f"Error extracting features: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/user/{user_id}/latest")
-async def get_latest_features(
+@router.post("/predict/{user_id}")
+async def predict_employee_metrics(
     user_id: str,
-    limit: int = 1,
+    providers: Optional[List[str]] = None,
+    days_back: int = 14,
+    custom_features: Optional[dict] = None,
     db: Session = Depends(get_db)
 ):
     """
-    Get the latest extracted features for a user
+    Extract features and predict employee metrics
+
+    Args:
+        user_id: User ID to make predictions for
+        providers: List of data providers (if None, use custom_features)
+        days_back: Number of days of historical data to analyze
+        custom_features: Manually provided features (skip data fetching if provided)
+
+    Returns:
+        Predictions and interpretations
     """
     try:
-        # Get latest feature set
-        latest_features = db.query(Feature).filter(
-            Feature.user_id == user_id
-        ).order_by(Feature.created_at.desc()).limit(limit * 30).all()
-        
-        if not latest_features:
+        prediction_service = get_prediction_service()
+
+        # Extract features if not provided
+        if custom_features is None:
+            if not providers:
+                # Default to all providers if none specified
+                providers = ["microsoft", "slack", "jira"]
+
+            logger.info(f"Extracting features for user {user_id}")
+
+            feature_result = await extract_features(
+                user_id=user_id,
+                providers=providers,
+                days_back=days_back,
+                db=db
+            )
+
+            features = feature_result["features"]
+            data_info = {
+                "date_range": feature_result["date_range"],
+                "providers_used": feature_result["providers_used"],
+                "data_counts": feature_result["data_counts"]
+            }
+        else:
+            features = custom_features
+            data_info = {
+                "source": "custom_features",
+                "note": "Features provided manually"
+            }
+
+        # Make predictions
+        logger.info(f"Making predictions for user {user_id}")
+        prediction_result = prediction_service.predict(features)
+
+        if prediction_result["status"] == "error":
+            raise HTTPException(status_code=500, detail=prediction_result["message"])
+
+        return {
+            "status": "success",
+            "user_id": user_id,
+            "timestamp": datetime.utcnow().isoformat(),
+            "data_info": data_info,
+            "features": features,
+            "predictions": prediction_result["predictions"],
+            "interpretations": prediction_result["interpretations"]
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error making predictions: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/importance/{target}")
+async def get_feature_importance(target: str):
+    """
+    Get feature importance for a specific prediction target
+
+    Args:
+        target: Target variable (e.g., 'performance_score', 'burnout_risk_score')
+
+    Returns:
+        Feature importance scores sorted by importance
+    """
+    try:
+        prediction_service = get_prediction_service()
+
+        importance = prediction_service.get_feature_importance(target)
+
+        if not importance:
             raise HTTPException(
                 status_code=404,
-                detail="No features found. Please extract features first."
+                detail=f"Feature importance not available for target: {target}"
             )
-        
-        # Group by date
-        features_by_date = {}
-        for feature in latest_features:
-            date_key = feature.date.isoformat()
-            if date_key not in features_by_date:
-                features_by_date[date_key] = {}
-            features_by_date[date_key][feature.feature_name] = feature.feature_value
-        
-        # Get most recent
-        recent_date = max(features_by_date.keys())
-        
+
+        # Convert to list format for easier visualization
+        importance_list = [
+            {"feature": feature, "importance": score}
+            for feature, score in importance.items()
+        ]
+
         return {
-            "user_id": user_id,
-            "date": recent_date,
-            "features": features_by_date[recent_date],
-            "feature_count": len(features_by_date[recent_date])
+            "status": "success",
+            "target": target,
+            "feature_count": len(importance_list),
+            "feature_importance": importance_list
         }
-    
+
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error getting features: {e}")
+        logger.error(f"Error getting feature importance: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/user/{user_id}/history")
-async def get_feature_history(
-    user_id: str,
-    days_back: int = 30,
+@router.post("/predict/batch")
+async def batch_predict(
+    predictions_request: dict,
     db: Session = Depends(get_db)
 ):
     """
-    Get feature history over time for trend analysis
+    Make predictions for multiple employees
+
+    Request body:
+    {
+        "user_ids": ["user1", "user2", ...],
+        "providers": ["microsoft", "jira"],
+        "days_back": 14
+    }
+
+    Returns:
+        Dictionary with predictions for each user
     """
     try:
-        cutoff_date = datetime.utcnow() - timedelta(days=days_back)
-        
-        features = db.query(Feature).filter(
-            Feature.user_id == user_id,
-            Feature.date >= cutoff_date
-        ).order_by(Feature.date.desc()).all()
-        
-        if not features:
-            raise HTTPException(status_code=404, detail="No feature history found")
-        
-        # Group by date
-        history = {}
-        for feature in features:
-            date_key = feature.date.isoformat()
-            if date_key not in history:
-                history[date_key] = {}
-            history[date_key][feature.feature_name] = feature.feature_value
-        
+        user_ids = predictions_request.get("user_ids", [])
+        providers = predictions_request.get("providers", ["microsoft"])
+        days_back = predictions_request.get("days_back", 14)
+
+        if not user_ids:
+            raise HTTPException(status_code=400, detail="user_ids list is required")
+
+        results = {}
+
+        for user_id in user_ids:
+            try:
+                result = await predict_employee_metrics(
+                    user_id=user_id,
+                    providers=providers,
+                    days_back=days_back,
+                    db=db
+                )
+                results[user_id] = result
+            except Exception as e:
+                logger.error(f"Error predicting for user {user_id}: {e}")
+                results[user_id] = {
+                    "status": "error",
+                    "user_id": user_id,
+                    "error": str(e)
+                }
+
         return {
-            "user_id": user_id,
-            "days_back": days_back,
-            "data_points": len(history),
-            "history": history
+            "status": "success",
+            "total_users": len(user_ids),
+            "successful": len([r for r in results.values() if r.get("status") == "success"]),
+            "failed": len([r for r in results.values() if r.get("status") == "error"]),
+            "predictions": results
         }
-    
+
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error getting feature history: {e}")
+        logger.error(f"Error in batch prediction: {e}")
         raise HTTPException(status_code=500, detail=str(e))

@@ -10,7 +10,7 @@ OAuth2-based integration platform for workplace productivity and wellbeing analy
   - Code exchange for tokens
   - Token refresh mechanism
   - Secure encrypted storage
-  
+
 - **Microsoft Graph Data Fetching**
   - Calendar events
   - Email metadata
@@ -22,7 +22,7 @@ OAuth2-based integration platform for workplace productivity and wellbeing analy
   - Code exchange for tokens
   - Secure encrypted storage
   - Workspace information
-  
+
 - **Slack Data Fetching**
   - User messages across channels
   - Emoji reactions (sentiment proxy)
@@ -36,7 +36,7 @@ OAuth2-based integration platform for workplace productivity and wellbeing analy
   - Token refresh mechanism
   - Accessible resources detection
   - Secure encrypted storage
-  
+
 - **Jira Data Fetching**
   - User issues (assigned/created)
   - Worklog time tracking
@@ -49,14 +49,14 @@ OAuth2-based integration platform for workplace productivity and wellbeing analy
   - Code exchange for tokens
   - Token refresh mechanism
   - Secure encrypted storage
-  
+
 - **Asana Data Fetching**
   - User tasks (assigned/modified)
   - Task completion tracking
   - Project participation
   - Workload statistics
   - Context switching metrics
-  
+
 - **Database Models**
   - Users
   - OAuth tokens (encrypted)
@@ -64,11 +64,19 @@ OAuth2-based integration platform for workplace productivity and wellbeing analy
   - Features storage
   - Wellbeing scores
 
+- **ML Prediction Pipeline**
+  - Feature extraction from API data
+  - XGBoost-based predictions
+  - Performance score prediction
+  - Burnout risk assessment
+  - Actionable recommendations
+  - Feature importance analysis
+
 ### Coming Soon
 - HRIS integration
 - Survey platforms (Typeform/Qualtrics)
-- Feature extraction pipeline
-- ML model integration
+- Real-time predictions
+- Team-level analytics
 - Background job scheduler
 
 ## Project Structure
