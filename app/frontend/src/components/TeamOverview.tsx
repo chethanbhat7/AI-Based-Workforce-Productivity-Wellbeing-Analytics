@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from '../context/AuthContext';
+import { generateConsistentValue, getConsistentStressLevel, getConsistentTrend, getConsistentLastActive, getTestScenarioValues } from '../utils/consistentValues';
 import {
   Box,
   Card,
@@ -48,35 +49,6 @@ export const TeamOverview = ({ onViewMember }: TeamOverviewProps) => {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Generate consistent dummy values based on email hash
-  const generateConsistentValue = (email: string, seed: number, min: number, max: number): number => {
-    let hash = 0;
-    const str = email + seed.toString();
-    for (let i = 0; i < str.length; i++) {
-      hash = ((hash << 5) - hash) + str.charCodeAt(i);
-      hash = hash & hash; // Convert to 32bit integer
-    }
-    return min + (Math.abs(hash) % (max - min + 1));
-  };
-
-  const getConsistentStressLevel = (email: string): 'low' | 'medium' | 'high' => {
-    const levels: ('low' | 'medium' | 'high')[] = ['low', 'medium', 'high'];
-    const index = generateConsistentValue(email, 999, 0, 2);
-    return levels[index];
-  };
-
-  const getConsistentTrend = (email: string): 'up' | 'down' | 'stable' => {
-    const trends: ('up' | 'down' | 'stable')[] = ['up', 'down', 'stable'];
-    const index = generateConsistentValue(email, 888, 0, 2);
-    return trends[index];
-  };
-
-  const getConsistentLastActive = (email: string): string => {
-    const times = ['Just now', '15 minutes ago', '1 hour ago', '2 hours ago'];
-    const index = generateConsistentValue(email, 777, 0, 3);
-    return times[index];
-  };
-
   // Fetch team members from Firestore
   useEffect(() => {
     const fetchTeamMembers = async () => {
@@ -101,17 +73,19 @@ export const TeamOverview = ({ onViewMember }: TeamOverviewProps) => {
           const data = doc.data();
           const email = data.email || '';
           
-          // Use real data if available, otherwise generate consistent dummy values
+          // Check for test scenario values first
+          const testScenario = getTestScenarioValues(email);
+          
+          // Use test scenario, then real data, then fallback to consistent dummy values
           members.push({
             id: members.length + 1,
             name: data.name || 'Unknown',
             email: email,
-            // Use real analytics if provided, fallback to consistent dummy values
-            taskCompletionRate: data.analytics?.taskCompletionRate ?? generateConsistentValue(email, 1, 60, 100),
+            taskCompletionRate: testScenario?.taskCompletionRate ?? data.analytics?.taskCompletionRate ?? generateConsistentValue(email, 1, 60, 100),
             loggedHours: data.analytics?.loggedHours ?? generateConsistentValue(email, 2, 30, 45),
-            wellbeingScore: data.analytics?.wellbeingScore ?? generateConsistentValue(email, 3, 50, 90),
-            isExhausted: data.analytics?.isExhausted ?? (generateConsistentValue(email, 4, 0, 100) < 30),
-            stressLevel: data.analytics?.stressLevel ?? getConsistentStressLevel(email),
+            wellbeingScore: testScenario?.wellbeingScore ?? data.analytics?.wellbeingScore ?? generateConsistentValue(email, 3, 50, 90),
+            isExhausted: testScenario?.isExhausted ?? data.analytics?.isExhausted ?? (generateConsistentValue(email, 4, 0, 100) < 30),
+            stressLevel: testScenario?.stressLevel ?? data.analytics?.stressLevel ?? getConsistentStressLevel(email),
             trend: data.analytics?.trend ?? getConsistentTrend(email),
             lastActive: data.analytics?.lastActive ?? getConsistentLastActive(email),
           });

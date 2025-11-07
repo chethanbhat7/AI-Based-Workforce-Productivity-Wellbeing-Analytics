@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { collection, query, where, getDocs, addDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from '../context/AuthContext';
+import { generateConsistentValue, getConsistentStressLevel, getTestScenarioValues } from '../utils/consistentValues';
 
 /**
  * This component runs in the background to automatically create burnout notifications
@@ -16,23 +17,6 @@ import { useAuth } from '../context/AuthContext';
  */
 export const BurnoutNotificationService = () => {
   const { user } = useAuth();
-
-  // Generate consistent dummy values
-  const generateConsistentValue = (email: string, seed: number, min: number, max: number): number => {
-    let hash = 0;
-    const str = email + seed.toString();
-    for (let i = 0; i < str.length; i++) {
-      hash = ((hash << 5) - hash) + str.charCodeAt(i);
-      hash = hash & hash;
-    }
-    return min + (Math.abs(hash) % (max - min + 1));
-  };
-
-  const getConsistentStressLevel = (email: string): 'low' | 'medium' | 'high' => {
-    const levels: ('low' | 'medium' | 'high')[] = ['low', 'medium', 'high'];
-    const index = generateConsistentValue(email, 999, 0, 2);
-    return levels[index];
-  };
 
   useEffect(() => {
     const checkForBurnoutAndNotify = async () => {
@@ -52,10 +36,12 @@ export const BurnoutNotificationService = () => {
         // First, check if current user is eligible to receive burnout alerts
         // Only send to users who are NOT burnt out and have high task completion (>75%)
         const currentUserEmail = user.email || '';
-        const currentUserWellbeing = (user as any).analytics?.wellbeingScore ?? generateConsistentValue(currentUserEmail, 3, 50, 90);
-        const currentUserStress = (user as any).analytics?.stressLevel ?? getConsistentStressLevel(currentUserEmail);
-        const currentUserExhausted = (user as any).analytics?.isExhausted ?? (generateConsistentValue(currentUserEmail, 4, 0, 100) < 30);
-        const currentUserTaskCompletion = (user as any).analytics?.taskCompletionRate ?? generateConsistentValue(currentUserEmail, 1, 60, 100);
+        const currentUserTestScenario = getTestScenarioValues(currentUserEmail);
+        
+        const currentUserWellbeing = currentUserTestScenario?.wellbeingScore ?? (user as any).analytics?.wellbeingScore ?? generateConsistentValue(currentUserEmail, 3, 50, 90);
+        const currentUserStress = currentUserTestScenario?.stressLevel ?? (user as any).analytics?.stressLevel ?? getConsistentStressLevel(currentUserEmail);
+        const currentUserExhausted = currentUserTestScenario?.isExhausted ?? (user as any).analytics?.isExhausted ?? (generateConsistentValue(currentUserEmail, 4, 0, 100) < 30);
+        const currentUserTaskCompletion = currentUserTestScenario?.taskCompletionRate ?? (user as any).analytics?.taskCompletionRate ?? generateConsistentValue(currentUserEmail, 1, 60, 100);
         
         // Check if current user is eligible (not burnt out AND high task completion)
         const isCurrentUserBurntOut = currentUserWellbeing < 60 || currentUserStress === 'high' || currentUserExhausted;
@@ -84,10 +70,13 @@ export const BurnoutNotificationService = () => {
           // Skip current user
           if (email === user.email) continue;
           
+          // Check for test scenario values first
+          const testScenario = getTestScenarioValues(email);
+          
           // Check if member is burnt out
-          const wellbeingScore = data.analytics?.wellbeingScore ?? generateConsistentValue(email, 3, 50, 90);
-          const stressLevel = data.analytics?.stressLevel ?? getConsistentStressLevel(email);
-          const isExhausted = data.analytics?.isExhausted ?? (generateConsistentValue(email, 4, 0, 100) < 30);
+          const wellbeingScore = testScenario?.wellbeingScore ?? data.analytics?.wellbeingScore ?? generateConsistentValue(email, 3, 50, 90);
+          const stressLevel = testScenario?.stressLevel ?? data.analytics?.stressLevel ?? getConsistentStressLevel(email);
+          const isExhausted = testScenario?.isExhausted ?? data.analytics?.isExhausted ?? (generateConsistentValue(email, 4, 0, 100) < 30);
           
           if (wellbeingScore < 60 || stressLevel === 'high' || isExhausted) {
             // Check if notification already exists for this user about this burnout member

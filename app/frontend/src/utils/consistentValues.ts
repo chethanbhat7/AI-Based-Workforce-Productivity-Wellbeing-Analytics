@@ -13,7 +13,72 @@ export const generateConsistentValue = (email: string, seed: number, min: number
   return min + (Math.abs(hash) % (max - min + 1));
 };
 
+/**
+ * TEST SCENARIOS FOR BURNOUT FEATURE TESTING
+ * Assign specific values based on email to test different conditions
+ */
+export const getTestScenarioValues = (email: string) => {
+  const lowerEmail = email.toLowerCase();
+  
+  // Scenario 1: Burnt out member (low wellbeing, high stress, low task completion)
+  if (lowerEmail.includes('member1') || lowerEmail.includes('burnout')) {
+    return {
+      wellbeingScore: 45,        // < 60 (burnt out)
+      stressLevel: 'high' as const,
+      taskCompletionRate: 55,    // < 75 (low completion)
+      isExhausted: true,
+    };
+  }
+  
+  // Scenario 2: Capable helper (high wellbeing, low stress, high task completion)
+  if (lowerEmail.includes('member2') || lowerEmail.includes('helper')) {
+    return {
+      wellbeingScore: 85,        // >= 60 (healthy)
+      stressLevel: 'low' as const,
+      taskCompletionRate: 92,    // > 75 (eligible to help)
+      isExhausted: false,
+    };
+  }
+  
+  // Scenario 3: Struggling but not burnt out (medium wellbeing, low task completion)
+  if (lowerEmail.includes('member3') || lowerEmail.includes('struggling')) {
+    return {
+      wellbeingScore: 68,        // >= 60 (not burnt out)
+      stressLevel: 'medium' as const,
+      taskCompletionRate: 65,    // < 75 (NOT eligible to help)
+      isExhausted: false,
+    };
+  }
+  
+  // Scenario 4: Another capable helper
+  if (lowerEmail.includes('member4') || lowerEmail.includes('productive')) {
+    return {
+      wellbeingScore: 78,        // >= 60 (healthy)
+      stressLevel: 'low' as const,
+      taskCompletionRate: 88,    // > 75 (eligible to help)
+      isExhausted: false,
+    };
+  }
+  
+  // Scenario 5: High stress but good completion
+  if (lowerEmail.includes('member5') || lowerEmail.includes('stressed')) {
+    return {
+      wellbeingScore: 55,        // < 60 (burnt out)
+      stressLevel: 'high' as const,
+      taskCompletionRate: 82,    // > 75 but still burnt out
+      isExhausted: true,
+    };
+  }
+  
+  // Default: Use hash-based generation for other emails
+  return null;
+};
+
 export const getConsistentStressLevel = (email: string): 'low' | 'medium' | 'high' => {
+  // Check if there's a test scenario first
+  const scenario = getTestScenarioValues(email);
+  if (scenario) return scenario.stressLevel;
+  
   const levels: ('low' | 'medium' | 'high')[] = ['low', 'medium', 'high'];
   const index = generateConsistentValue(email, 999, 0, 2);
   return levels[index];
