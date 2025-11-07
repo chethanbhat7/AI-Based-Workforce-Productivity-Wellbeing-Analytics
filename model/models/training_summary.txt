@@ -1,0 +1,85 @@
+
+================================================================================
+WORKFORCE WELLBEING ANALYSIS - MODEL TRAINING SUMMARY
+================================================================================
+
+Training Date: 2025-11-07 12:57:26
+Dataset: realistic_emp_data.csv
+Total Samples: 300
+Training Samples: 240
+Test Samples: 60
+Total Features: 114
+
+================================================================================
+MODEL 1: BURNOUT RISK SCORE
+================================================================================
+Algorithm: RandomForest
+Cross-Validation R²: 0.5545 (+/- 0.0896)
+Training R²: 0.9398
+Test R²: 0.5827
+Test RMSE: 0.1068
+Test MAE: 0.0809
+
+Top 5 Important Features:
+                feature  importance
+          meeting_hours    0.375977
+work_life_balance_score    0.100082
+     daily_active_hours    0.098897
+  meeting_to_work_ratio    0.062514
+      meetings_per_week    0.021876
+
+================================================================================
+MODEL 2: WELLBEING SCORE
+================================================================================
+Algorithm: GradientBoosting
+Cross-Validation R²: 0.4163 (+/- 0.0769)
+Training R²: 0.9744
+Test R²: 0.5645
+Test RMSE: 6.1778
+Test MAE: 4.8256
+
+Top 5 Important Features:
+                feature  importance
+  team_engagement_score    0.184122
+  meeting_to_work_ratio    0.131687
+work_life_balance_score    0.123439
+          meeting_hours    0.096266
+     daily_active_hours    0.052518
+
+================================================================================
+MODEL 3: EFFICIENCY SCORE
+================================================================================
+Algorithm: GradientBoosting
+Cross-Validation R²: 0.9609 (+/- 0.0100)
+Training R²: 0.9989
+Test R²: 0.9634
+Test RMSE: 5.0216
+Test MAE: 3.2716
+
+Top 5 Important Features:
+             feature  importance
+    commits_per_week    0.283132
+   avg_pr_size_lines    0.207476
+       pr_merge_rate    0.126349
+task_completion_rate    0.087853
+         prs_created    0.080622
+
+================================================================================
+FILES SAVED
+================================================================================
+- burnout_risk_model.pkl
+- wellbeing_model.pkl
+- efficiency_model.pkl
+- burnout_risk_scaler.pkl
+- wellbeing_scaler.pkl
+- efficiency_scaler.pkl
+- burnout_risk_feature_importance.csv
+- wellbeing_feature_importance.csv
+- efficiency_feature_importance.csv
+- feature_columns.json
+- model_metrics.json
+- training_summary.txt
+
+================================================================================
+TRAINING COMPLETE
+================================================================================
