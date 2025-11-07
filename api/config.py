@@ -109,6 +109,9 @@ class Settings(BaseSettings):
     ]
     GOOGLE_ATTENDANCE_SPREADSHEET_ID: str = ""  # ID of the attendance tracking spreadsheet
     
+    # Firebase
+    FIREBASE_SERVICE_ACCOUNT_KEY: str = ""  # Path to Firebase service account JSON file
+    
     # Background Jobs
     CELERY_BROKER_URL: str = "redis://localhost:6379/0"
     CELERY_RESULT_BACKEND: str = "redis://localhost:6379/0"
