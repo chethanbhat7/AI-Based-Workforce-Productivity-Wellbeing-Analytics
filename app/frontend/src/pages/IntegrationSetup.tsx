@@ -15,21 +15,25 @@ export const IntegrationSetup = () => {
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [showDialog, setShowDialog] = useState(true);
   const [checking, setChecking] = useState(true);
+  const [hasChecked, setHasChecked] = useState(false);
 
   const handleComplete = () => {
     // Redirect to appropriate dashboard based on role
     if (user?.role === 'supervisor') {
-      navigate('/supervisor-dashboard');
+      navigate('/supervisor-dashboard', { replace: true });
     } else {
-      navigate('/member-dashboard');
+      navigate('/member-dashboard', { replace: true });
     }
   };
 
   useEffect(() => {
+    // Prevent multiple checks
+    if (hasChecked) return;
+    
     const checkSetupStatus = async () => {
       // Redirect if no user
       if (!user) {
-        navigate('/login');
+        navigate('/login', { replace: true });
         return;
       }
 
@@ -40,20 +44,23 @@ export const IntegrationSetup = () => {
 
         if (userData?.integrationsSetupAt) {
           // User already completed setup, redirect to dashboard
+          setHasChecked(true);
           handleComplete();
         } else {
           // Show integration setup dialog
           setChecking(false);
+          setHasChecked(true);
         }
       } catch (error) {
         console.error('Error checking setup status:', error);
         // On error, allow user to proceed with setup
         setChecking(false);
+        setHasChecked(true);
       }
     };
 
     checkSetupStatus();
-  }, [user, navigate]);
+  }, [user, navigate, hasChecked]);
 
   const handleSelectionComplete = async (services: string[]) => {
     setSelectedServices(services);

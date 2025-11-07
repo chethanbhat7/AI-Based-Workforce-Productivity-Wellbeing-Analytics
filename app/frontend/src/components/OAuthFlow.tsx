@@ -58,6 +58,7 @@ export const OAuthFlow = ({ selectedServices, userId, onComplete }: OAuthFlowPro
   const [serviceStatuses, setServiceStatuses] = useState<ServiceStatus[]>([]);
   const [currentServiceIndex, setCurrentServiceIndex] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
+  const [isAuthorizing, setIsAuthorizing] = useState(false);
 
   useEffect(() => {
     // Initialize service statuses
@@ -71,7 +72,7 @@ export const OAuthFlow = ({ selectedServices, userId, onComplete }: OAuthFlowPro
 
   useEffect(() => {
     // Auto-start OAuth flow for services that need it
-    if (serviceStatuses.length > 0 && currentServiceIndex < serviceStatuses.length) {
+    if (serviceStatuses.length > 0 && currentServiceIndex < serviceStatuses.length && !isAuthorizing) {
       const currentService = serviceStatuses[currentServiceIndex];
       
       // Skip non-OAuth services (like CloudABIS)
@@ -85,10 +86,14 @@ export const OAuthFlow = ({ selectedServices, userId, onComplete }: OAuthFlowPro
         handleAuthorize(currentServiceIndex);
       }, 1000);
     }
-  }, [currentServiceIndex, serviceStatuses]);
+  }, [currentServiceIndex, serviceStatuses, isAuthorizing]);
 
   const handleAuthorize = (index: number) => {
     const service = serviceStatuses[index];
+    
+    // Prevent multiple authorization attempts
+    if (isAuthorizing) return;
+    setIsAuthorizing(true);
     
     // Update status to authorizing
     setServiceStatuses((prev) =>
@@ -100,6 +105,7 @@ export const OAuthFlow = ({ selectedServices, userId, onComplete }: OAuthFlowPro
     
     if (!oauthUrl) {
       handleServiceError(index, 'OAuth URL not configured');
+      setIsAuthorizing(false);
       return;
     }
 
@@ -119,9 +125,11 @@ export const OAuthFlow = ({ selectedServices, userId, onComplete }: OAuthFlowPro
     const handleMessage = (event: MessageEvent) => {
       if (event.data.type === 'oauth_success' && event.data.service === service.id) {
         window.removeEventListener('message', handleMessage);
+        setIsAuthorizing(false);
         handleServiceSuccess(index);
       } else if (event.data.type === 'oauth_error' && event.data.service === service.id) {
         window.removeEventListener('message', handleMessage);
+        setIsAuthorizing(false);
         handleServiceError(index, event.data.error || 'Authorization failed');
       }
     };
@@ -133,6 +141,7 @@ export const OAuthFlow = ({ selectedServices, userId, onComplete }: OAuthFlowPro
       if (popup && popup.closed) {
         clearInterval(checkPopup);
         window.removeEventListener('message', handleMessage);
+        setIsAuthorizing(false);
         
         // Check if status is still authorizing (not completed)
         const currentStatus = serviceStatuses[index].status;
@@ -168,6 +177,7 @@ export const OAuthFlow = ({ selectedServices, userId, onComplete }: OAuthFlowPro
     setServiceStatuses((prev) =>
       prev.map((s, i) => (i === index ? { ...s, status: 'pending', error: undefined } : s))
     );
+    setIsAuthorizing(false);
     setCurrentServiceIndex(index);
   };
 

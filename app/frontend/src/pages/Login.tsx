@@ -119,13 +119,13 @@ export const Login = () => {
         if (userData?.integrationsSetupAt) {
           // User has already completed setup, go directly to dashboard
           if (userData.role === 'supervisor') {
-            navigate('/supervisor-dashboard');
+            navigate('/supervisor-dashboard', { replace: true });
           } else {
-            navigate('/member-dashboard');
+            navigate('/member-dashboard', { replace: true });
           }
         } else {
           // First-time login, redirect to integration setup
-          navigate('/integration-setup');
+          navigate('/integration-setup', { replace: true });
         }
       }, 100);
     } catch (err: any) {
