@@ -1,0 +1,64 @@
+services:
+  # Backend API
+  - type: web
+    name: workforce-wellbeing-api
+    runtime: python
+    env: python
+    region: oregon
+    plan: free  # or 'starter' for paid plan
+    buildCommand: cd api && pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: cd api && gunicorn main:app -c gunicorn_config.py
+    envVars:
+      - key: DATABASE_URL
+        sync: false  # Set manually in Render dashboard
+      - key: SECRET_KEY
+        generateValue: true
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: TEST_MODE
+        value: false
+      - key: PYTHON_VERSION
+        value: 3.11.0
+
+  # Frontend (Static Site)
+  - type: web
+    name: workforce-wellbeing-frontend
+    runtime: static
+    buildCommand: cd app/frontend && npm install && npm run build
+    staticPublishPath: app/frontend/dist
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: workforce-wellbeing-api
+          property: url
+      - key: VITE_FIREBASE_API_KEY
+        sync: false
+      - key: VITE_FIREBASE_AUTH_DOMAIN
+        sync: false
+      - key: VITE_FIREBASE_PROJECT_ID
+        sync: false
+      - key: VITE_FIREBASE_STORAGE_BUCKET
+        sync: false
+      - key: VITE_FIREBASE_MESSAGING_SENDER_ID
+        sync: false
+      - key: VITE_FIREBASE_APP_ID
+        sync: false
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+  # PostgreSQL Database
+  - type: pserv
+    name: workforce-wellbeing-db
+    runtime: postgresql
+    plan: free
+    databaseName: wellbeing_db
+    databaseUser: wellbeing_user
+
+  # Redis (for Celery)
+  - type: redis
+    name: workforce-wellbeing-redis
+    plan: free
+    maxmemoryPolicy: noeviction

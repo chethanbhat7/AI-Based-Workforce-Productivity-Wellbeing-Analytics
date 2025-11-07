@@ -9,8 +9,6 @@ import {
 } from '@mui/material';
 import {
   VideoCall,
-  Chat,
-  Assignment,
   AccessTime,
   TrendingUp,
   Speed,
@@ -48,33 +46,6 @@ export const ProductivityMetrics = () => {
       color: '#e74c3c',
       bgColor: '#e74c3c15',
       description: 'Number of meetings attended',
-    },
-    {
-      title: 'Messages Sent',
-      value: 245,
-      unit: 'msgs/week',
-      icon: <Chat />,
-      color: '#2ecc71',
-      bgColor: '#2ecc7115',
-      description: 'Messages you sent',
-    },
-    {
-      title: 'Messages Received',
-      value: 187,
-      unit: 'msgs/week',
-      icon: <Chat />,
-      color: '#f39c12',
-      bgColor: '#f39c1215',
-      description: 'Messages you received',
-    },
-    {
-      title: 'Task Completion',
-      value: 92,
-      unit: '%',
-      icon: <Assignment />,
-      color: '#9b59b6',
-      bgColor: '#9b59b615',
-      description: 'Tasks completed on time',
     },
     {
       title: 'Logged Hours',
@@ -134,7 +105,7 @@ export const ProductivityMetrics = () => {
   const efficiencyScore = getEfficiencyScore();
 
   return (
-    <Box sx={{ maxWidth: 1400, mx: 'auto', p: 3 }}>
+    <Box sx={{ width: '100%', p: 3 }}>
       {/* Header with Efficiency Score */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" sx={{ fontWeight: 700, mb: 3 }}>
@@ -144,10 +115,11 @@ export const ProductivityMetrics = () => {
         {/* Efficiency Score Card */}
         <Card
           sx={{
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            color: 'white',
+            bgcolor: 'white',
+            border: '1px solid',
+            borderColor: 'divider',
             mb: 4,
-            boxShadow: 3,
+            boxShadow: 2,
           }}
         >
           <CardContent sx={{ p: 3 }}>
@@ -157,7 +129,7 @@ export const ProductivityMetrics = () => {
                   width: 100,
                   height: 100,
                   borderRadius: '50%',
-                  bgcolor: 'rgba(255, 255, 255, 0.2)',
+                  bgcolor: '#e3f2fd',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -165,17 +137,17 @@ export const ProductivityMetrics = () => {
                 }}
               >
                 <Box sx={{ textAlign: 'center' }}>
-                  <Typography variant="h3" sx={{ fontWeight: 700 }}>
+                  <Typography variant="h3" sx={{ fontWeight: 700, color: '#1976d2' }}>
                     {efficiencyScore}
                   </Typography>
-                  <Typography variant="caption">/100</Typography>
+                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>/100</Typography>
                 </Box>
               </Box>
               <Box sx={{ flex: 1 }}>
                 <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
                   Overall Efficiency Score
                 </Typography>
-                <Typography variant="body2" sx={{ opacity: 0.9, mb: 2 }}>
+                <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
                   Based on task completion, meeting time, and logged hours
                 </Typography>
                 <LinearProgress
@@ -184,9 +156,9 @@ export const ProductivityMetrics = () => {
                   sx={{
                     height: 8,
                     borderRadius: 4,
-                    bgcolor: 'rgba(255, 255, 255, 0.2)',
+                    bgcolor: '#e0e0e0',
                     '& .MuiLinearProgress-bar': {
-                      bgcolor: 'white',
+                      bgcolor: '#1976d2',
                       borderRadius: 4,
                     },
                   }}
@@ -378,12 +350,6 @@ export const ProductivityMetrics = () => {
             </Typography>
             <Box>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1.5 }}>
-                <Typography variant="body2">Task Completion Rate</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: '#2ecc71' }}>
-                  92%
-                </Typography>
-              </Box>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1.5 }}>
                 <Typography variant="body2">Meeting Count</Typography>
                 <Typography variant="body2" sx={{ fontWeight: 600 }}>
                   18 meetings
@@ -398,65 +364,6 @@ export const ProductivityMetrics = () => {
             </Box>
           </CardContent>
         </Card>
-      </Box>
-
-      {/* Insights Section */}
-      <Box sx={{ mt: 4 }}>
-        <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
-          Key Insights
-        </Typography>
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
-            gap: 2,
-          }}
-        >
-          <Paper
-            sx={{
-              p: 2,
-              borderLeft: '4px solid #2ecc71',
-              bgcolor: '#2ecc7110',
-            }}
-          >
-            <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
-              Strong Performance
-            </Typography>
-            <Typography variant="caption" sx={{ color: '#7f8c8d' }}>
-              92% task completion rate shows excellent productivity and reliability
-            </Typography>
-          </Paper>
-
-          <Paper
-            sx={{
-              p: 2,
-              borderLeft: '4px solid #3498db',
-              bgcolor: '#3498db10',
-            }}
-          >
-            <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
-              Meeting Heavy
-            </Typography>
-            <Typography variant="caption" sx={{ color: '#7f8c8d' }}>
-              32% of time in meetings - consider batching or reducing for deep work
-            </Typography>
-          </Paper>
-
-          <Paper
-            sx={{
-              p: 2,
-              borderLeft: '4px solid #f39c12',
-              bgcolor: '#f39c1210',
-            }}
-          >
-            <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
-              Communicative
-            </Typography>
-            <Typography variant="caption" sx={{ color: '#7f8c8d' }}>
-              245 messages sent - you're actively engaging with your team
-            </Typography>
-          </Paper>
-        </Box>
       </Box>
     </Box>
   );

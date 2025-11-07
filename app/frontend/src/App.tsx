@@ -9,38 +9,126 @@ import { MemberDashboard } from './pages/MemberDashboard'
 import { IntegrationSetup } from './pages/IntegrationSetup'
 import './App.css'
 
-// Material UI Theme
+// Material UI Theme - Enhanced with Gradients and Better Color Psychology
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#1976d2',
-      light: '#42a5f5',
-      dark: '#1565c0',
+      main: '#1e5f8c',      // Professional blue
+      light: '#2980b9',
+      dark: '#16425b',
     },
     secondary: {
-      main: '#dc004e',
-      light: '#f73378',
-      dark: '#9a0036',
+      main: '#6c3483',      // Elegant purple
+      light: '#8e44ad',
+      dark: '#512e5f',
     },
     success: {
-      main: '#4caf50',
+      main: '#27ae60',      // Positive green
+      light: '#2ecc71',
+      dark: '#1e8449',
     },
     warning: {
-      main: '#ff9800',
+      main: '#f39c12',      // Attention orange
+      light: '#f5b041',
+      dark: '#d68910',
     },
     error: {
-      main: '#f44336',
+      main: '#e74c3c',      // Alert red
+      light: '#ec7063',
+      dark: '#c0392b',
     },
     info: {
-      main: '#2196f3',
+      main: '#3498db',      // Informative blue
+      light: '#5dade2',
+      dark: '#2874a6',
     },
     background: {
-      default: '#fafafa',
+      default: '#f8f9fa',
       paper: '#ffffff',
     },
   },
   typography: {
-    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+    fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif',
+    h1: {
+      fontWeight: 700,
+      letterSpacing: '-0.02em',
+    },
+    h2: {
+      fontWeight: 700,
+      letterSpacing: '-0.01em',
+    },
+    h3: {
+      fontWeight: 700,
+      letterSpacing: '-0.01em',
+    },
+    h4: {
+      fontWeight: 700,
+      letterSpacing: '-0.01em',
+    },
+    h5: {
+      fontWeight: 600,
+      letterSpacing: '-0.005em',
+    },
+    h6: {
+      fontWeight: 600,
+      letterSpacing: '-0.005em',
+    },
+    subtitle1: {
+      fontWeight: 500,
+      letterSpacing: '0em',
+    },
+    subtitle2: {
+      fontWeight: 500,
+      letterSpacing: '0em',
+    },
+    body1: {
+      fontWeight: 400,
+      letterSpacing: '0em',
+    },
+    body2: {
+      fontWeight: 400,
+      letterSpacing: '0em',
+    },
+    button: {
+      fontWeight: 600,
+      letterSpacing: '0.02em',
+      textTransform: 'none',
+    },
+    caption: {
+      fontWeight: 400,
+      letterSpacing: '0.01em',
+    },
+    overline: {
+      fontWeight: 600,
+      letterSpacing: '0.1em',
+    },
+  },
+  shape: {
+    borderRadius: 8,
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          textTransform: 'none',
+          fontWeight: 600,
+        },
+      },
+    },
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          borderRadius: 12,
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        rounded: {
+          borderRadius: 12,
+        },
+      },
+    },
   },
 })
 

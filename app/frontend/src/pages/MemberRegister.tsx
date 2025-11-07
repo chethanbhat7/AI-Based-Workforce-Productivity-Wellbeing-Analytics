@@ -2,8 +2,6 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
-  Container,
-  Card,
   TextField,
   Button,
   Typography,
@@ -198,7 +196,7 @@ export const MemberRegister = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        bgcolor: 'background.default',
+        background: 'linear-gradient(135deg, #424242 0%, #212121 100%)',
         p: 2,
       }}
     >
@@ -207,56 +205,133 @@ export const MemberRegister = () => {
           border: '2px solid',
           borderColor: 'primary.main',
           borderRadius: 3,
-          p: 4,
-          bgcolor: 'background.paper',
+          background: 'linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%)',
           boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+          maxWidth: 1100,
+          width: '100%',
+          minHeight: 600,
+          display: 'flex',
+          overflow: 'hidden',
         }}
       >
-        <Container maxWidth="xs">
-          <Stack spacing={4}>
-            {/* Header */}
-            <Box sx={{ textAlign: 'center' }}>
-              <Box
-                sx={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: 60,
-                  height: 60,
-                  bgcolor: 'primary.main',
-                  borderRadius: 2,
-                  mb: 2,
-                }}
-              >
-                <Work sx={{ color: 'white', fontSize: 32 }} />
-              </Box>
-              <Typography
-                variant="h4"
-                sx={{
-                  fontWeight: 700,
-                  mb: 1,
-                  color: 'primary.main',
-                }}
-              >
-                Member Registration
-              </Typography>
-              <Typography
-                variant="subtitle2"
-                sx={{
-                  textTransform: 'uppercase',
-                  letterSpacing: 0.5,
-                  color: 'text.secondary',
-                  fontWeight: 600,
-                }}
-              >
-                Wellbeing Analytics Platform
-              </Typography>
-            </Box>
+        {/* Left Side - Branding */}
+        <Box
+          sx={{
+            flex: 1,
+            p: 6,
+            display: { xs: 'none', md: 'flex' },
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'flex-start',
+            background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
+            color: 'white',
+          }}
+        >
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 80,
+              height: 80,
+              bgcolor: 'rgba(255, 255, 255, 0.2)',
+              borderRadius: 2,
+              mb: 3,
+            }}
+          >
+            <Work sx={{ color: 'white', fontSize: 48 }} />
+          </Box>
+          <Typography
+            variant="h3"
+            sx={{
+              fontWeight: 700,
+              mb: 2,
+            }}
+          >
+            Workforce
+          </Typography>
+          <Typography
+            variant="h6"
+            sx={{
+              fontWeight: 400,
+              opacity: 0.9,
+              mb: 4,
+            }}
+          >
+            Wellbeing Analytics Platform
+          </Typography>
+          <Typography
+            variant="body1"
+            sx={{
+              opacity: 0.8,
+              lineHeight: 1.8,
+            }}
+          >
+            Join your team to track productivity, monitor wellbeing metrics, and contribute to a healthier workplace.
+          </Typography>
+        </Box>
 
-            {/* Registration Form Card */}
-            <Card sx={{ p: 4, boxShadow: 2 }}>
-              <form onSubmit={handleSubmit}>
-                <Stack spacing={2.5}>
+        {/* Right Side - Registration Form */}
+        <Box
+          sx={{
+            flex: 1,
+            p: { xs: 4, md: 6 },
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            bgcolor: 'white',
+            overflowY: 'auto',
+          }}
+        >
+          {/* Mobile - Show logo on top */}
+          <Box sx={{ display: { xs: 'block', md: 'none' }, textAlign: 'center', mb: 3 }}>
+            <Box
+              sx={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 60,
+                height: 60,
+                bgcolor: 'primary.main',
+                borderRadius: 2,
+                mb: 2,
+              }}
+            >
+              <Work sx={{ color: 'white', fontSize: 32 }} />
+            </Box>
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: 700,
+                color: 'primary.main',
+              }}
+            >
+              Workforce
+            </Typography>
+          </Box>
+
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: 700,
+              mb: 1,
+              color: 'text.primary',
+            }}
+          >
+            Member Registration
+          </Typography>
+          <Typography
+            variant="body2"
+            sx={{
+              color: 'text.secondary',
+              mb: 3,
+            }}
+          >
+            Create your member account
+          </Typography>
+
+          <form onSubmit={handleSubmit}>
+            <Stack spacing={2.5}>
                   <TextField
                     label="Full Name"
                     name="name"
@@ -383,10 +458,8 @@ export const MemberRegister = () => {
                   </Button>
                 </Stack>
               </form>
-            </Card>
-          </Stack>
-        </Container>
-      </Box>
-    </Box>
-  );
-};
+            </Box>
+          </Box>
+        </Box>
+      );
+    };

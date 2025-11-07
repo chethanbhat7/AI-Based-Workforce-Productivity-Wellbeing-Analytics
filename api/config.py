@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     # Server
     HOST: str = "0.0.0.0"
     PORT: int = 8000
+    BASE_URL: str = "http://localhost:8000"  # Override in production
     
     # Database
     DATABASE_URL: str = "postgresql://user:password@localhost:5432/wellbeing_db"
@@ -40,7 +41,7 @@ class Settings(BaseSettings):
     MICROSOFT_CLIENT_ID: str = ""
     MICROSOFT_CLIENT_SECRET: str = ""
     MICROSOFT_TENANT_ID: str = "common"  # or specific tenant ID
-    MICROSOFT_REDIRECT_URI: str = "http://localhost:8000/auth/microsoft/callback"
+    MICROSOFT_REDIRECT_URI: str = ""  # Will be computed if empty
     MICROSOFT_SCOPES: List[str] = [
         "User.Read",
         "Calendars.Read",
@@ -55,7 +56,7 @@ class Settings(BaseSettings):
     # Slack OAuth2
     SLACK_CLIENT_ID: str = ""
     SLACK_CLIENT_SECRET: str = ""
-    SLACK_REDIRECT_URI: str = "http://localhost:8000/auth/slack/callback"
+    SLACK_REDIRECT_URI: str = ""  # Will be computed if empty
     SLACK_SCOPES: List[str] = [
         "channels:history",
         "channels:read",
@@ -72,18 +73,18 @@ class Settings(BaseSettings):
     # Jira OAuth2
     JIRA_CLIENT_ID: str = ""
     JIRA_CLIENT_SECRET: str = ""
-    JIRA_REDIRECT_URI: str = "http://localhost:8000/auth/jira/callback"
+    JIRA_REDIRECT_URI: str = ""  # Will be computed if empty
     JIRA_CLOUD_ID: str = ""
     
     # Asana OAuth2
     ASANA_CLIENT_ID: str = ""
     ASANA_CLIENT_SECRET: str = ""
-    ASANA_REDIRECT_URI: str = "http://localhost:8000/auth/asana/callback"
+    ASANA_REDIRECT_URI: str = ""  # Will be computed if empty
     
     # GitHub OAuth2
     GITHUB_CLIENT_ID: str = ""
     GITHUB_CLIENT_SECRET: str = ""
-    GITHUB_REDIRECT_URI: str = "http://localhost:8000/auth/github/callback"
+    GITHUB_REDIRECT_URI: str = ""  # Will be computed if empty
     GITHUB_SCOPES: List[str] = [
         "repo",  # Access to repositories
         "read:user",  # Read user profile
@@ -101,12 +102,15 @@ class Settings(BaseSettings):
     # Google Sheets OAuth2 (for attendance tracking)
     GOOGLE_CLIENT_ID: str = ""
     GOOGLE_CLIENT_SECRET: str = ""
-    GOOGLE_REDIRECT_URI: str = "http://localhost:8000/auth/google/callback"
+    GOOGLE_REDIRECT_URI: str = ""  # Will be computed if empty
     GOOGLE_SCOPES: List[str] = [
         "https://www.googleapis.com/auth/spreadsheets",  # Read and write spreadsheets
         "https://www.googleapis.com/auth/drive.file"  # Access to created/opened files
     ]
     GOOGLE_ATTENDANCE_SPREADSHEET_ID: str = ""  # ID of the attendance tracking spreadsheet
+    
+    # Firebase
+    FIREBASE_SERVICE_ACCOUNT_KEY: str = ""  # Path to Firebase service account JSON file
     
     # Background Jobs
     CELERY_BROKER_URL: str = "redis://localhost:6379/0"
@@ -120,6 +124,18 @@ class Settings(BaseSettings):
     # Privacy
     ANONYMIZE_DATA: bool = True
     HASH_ALGORITHM: str = "sha256"
+    
+    def get_redirect_uri(self, provider: str) -> str:
+        """Get OAuth redirect URI for the given provider"""
+        provider_uri_map = {
+            "microsoft": self.MICROSOFT_REDIRECT_URI or f"{self.BASE_URL}/auth/microsoft/callback",
+            "slack": self.SLACK_REDIRECT_URI or f"{self.BASE_URL}/auth/slack/callback",
+            "jira": self.JIRA_REDIRECT_URI or f"{self.BASE_URL}/auth/jira/callback",
+            "asana": self.ASANA_REDIRECT_URI or f"{self.BASE_URL}/auth/asana/callback",
+            "github": self.GITHUB_REDIRECT_URI or f"{self.BASE_URL}/auth/github/callback",
+            "google": self.GOOGLE_REDIRECT_URI or f"{self.BASE_URL}/auth/google/callback",
+        }
+        return provider_uri_map.get(provider.lower(), "")
     
     class Config:
         env_file = ".env"

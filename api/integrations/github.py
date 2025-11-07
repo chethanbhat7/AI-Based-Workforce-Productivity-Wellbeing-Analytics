@@ -19,7 +19,7 @@ class GitHubOAuth:
     def __init__(self):
         self.client_id = settings.GITHUB_CLIENT_ID
         self.client_secret = settings.GITHUB_CLIENT_SECRET
-        self.redirect_uri = settings.GITHUB_REDIRECT_URI
+        self.redirect_uri = settings.get_redirect_uri("github")
         self.scopes = settings.GITHUB_SCOPES
         self.authorize_endpoint = "https://github.com/login/oauth/authorize"
         self.token_endpoint = "https://github.com/login/oauth/access_token"

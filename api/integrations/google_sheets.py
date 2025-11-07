@@ -22,7 +22,7 @@ class GoogleSheetsOAuth:
     def __init__(self):
         self.client_id = settings.GOOGLE_CLIENT_ID
         self.client_secret = settings.GOOGLE_CLIENT_SECRET
-        self.redirect_uri = settings.GOOGLE_REDIRECT_URI
+        self.redirect_uri = settings.get_redirect_uri("google")
         self.scopes = settings.GOOGLE_SCOPES
     
     def get_authorization_url(self, state: str = None) -> str:

@@ -19,7 +19,7 @@ class SlackOAuth:
     def __init__(self):
         self.client_id = settings.SLACK_CLIENT_ID
         self.client_secret = settings.SLACK_CLIENT_SECRET
-        self.redirect_uri = settings.SLACK_REDIRECT_URI
+        self.redirect_uri = settings.get_redirect_uri("slack")
         self.scopes = settings.SLACK_SCOPES
         self.authorize_endpoint = "https://slack.com/oauth/v2/authorize"
         self.token_endpoint = "https://slack.com/api/oauth.v2.access"

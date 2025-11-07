@@ -2,17 +2,18 @@ import { useEffect } from 'react';
 import { collection, query, where, getDocs, addDoc, doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from '../context/AuthContext';
-import { generateConsistentValue, getTestScenarioValues } from '../utils/consistentValues';
+import { generateConsistentValue, getTestScenarioValues, getConsistentStressLevel } from '../utils/consistentValues';
 
 /**
  * BURNOUT MONITORING SERVICE
  * 
- * This service monitors all team members and sends EMAIL alerts to supervisors when:
- * 1. A member's burnout risk exceeds 70% threshold
- * 2. A member does their 3rd overtime in the same week
+ * This service monitors all team members and sends alerts to supervisors when:
+ * 1. A member is experiencing burnout (low wellbeing, high stress, or exhaustion)
+ * 2. A member's burnout risk exceeds 70% threshold
+ * 3. A member does their 3rd overtime in the same week
  * 
- * Runs daily but tracks weekly patterns.
- * Emails are sent to the supervisor of the affected team.
+ * Creates both in-app notifications and email alerts.
+ * Runs on supervisor dashboard load and periodically.
  */
 
 export const BurnoutMonitoringService = () => {
@@ -27,20 +28,22 @@ export const BurnoutMonitoringService = () => {
         const supervisorTeamNumber = (user as any).teamNumber || '1';
         const supervisorEmail = user.email || '';
         
-        // Check if we already ran monitoring today (once per day check)
-        const today = new Date().toISOString().split('T')[0];
-        const monitoringCheckKey = `burnout_monitoring_${user.id}_${today}`;
+        // Check if we already ran monitoring recently (every 5 minutes)
+        const now = Date.now();
+        const lastCheckKey = `burnout_monitoring_last_check_${user.id}`;
+        const lastCheck = localStorage.getItem(lastCheckKey);
         
-        if (localStorage.getItem(monitoringCheckKey)) {
-          return; // Already monitored today
+        if (lastCheck && (now - parseInt(lastCheck)) < 5 * 60 * 1000) {
+          return; // Checked less than 5 minutes ago
         }
 
+        console.log('🔍 Running burnout monitoring for supervisor...');
+
         // Get current week start (Monday)
-        const now = new Date();
-        const currentDay = now.getDay();
+        const currentDay = new Date().getDay();
         const mondayOffset = currentDay === 0 ? -6 : 1 - currentDay; // Handle Sunday
-        const weekStart = new Date(now);
-        weekStart.setDate(now.getDate() + mondayOffset);
+        const weekStart = new Date();
+        weekStart.setDate(new Date().getDate() + mondayOffset);
         weekStart.setHours(0, 0, 0, 0);
 
         // Query all members in supervisor's team
@@ -53,30 +56,92 @@ export const BurnoutMonitoringService = () => {
         
         const querySnapshot = await getDocs(q);
         
+        console.log(`Found ${querySnapshot.size} team members to monitor`);
+        
         for (const docSnap of querySnapshot.docs) {
           const memberData = docSnap.data();
           const memberEmail = memberData.email || '';
           const memberName = memberData.name || memberEmail;
+          const memberId = docSnap.id;
           
           // Get test scenario or generate values
           const testScenario = getTestScenarioValues(memberEmail);
           
-          // Calculate burnout risk (matches WellbeingProfile calculation)
+          // Calculate burnout indicators
           const wellbeingScore = testScenario?.wellbeingScore ?? 
             memberData.analytics?.wellbeingScore ?? 
             generateConsistentValue(memberEmail, 3, 50, 90);
+            
+          const stressLevel = testScenario?.stressLevel ??
+            memberData.analytics?.stressLevel ??
+            getConsistentStressLevel(memberEmail);
+            
+          const isExhausted = testScenario?.isExhausted ??
+            memberData.analytics?.isExhausted ??
+            (generateConsistentValue(memberEmail, 4, 0, 100) < 30);
             
           const meetingHours = memberData.analytics?.meetingHours ?? 
             generateConsistentValue(memberEmail, 5, 8, 18);
             
           const burnoutRisk = Math.min(100, Math.max(0, 
-            100 - wellbeingScore + (meetingHours > 15 ? 20 : 0)
+            100 - wellbeingScore + (meetingHours > 15 ? 20 : 0) + (isExhausted ? 30 : 0)
           ));
           
-          // Get overtime records for this week
-          const overtimeThisWeek = await getOvertimeThisWeek(docSnap.id, weekStart);
+          // CHECK 1: Member is burnt out (low wellbeing OR high stress OR exhausted)
+          const isBurntOut = wellbeingScore < 60 || stressLevel === 'high' || isExhausted;
           
-          // CHECK 1: Burnout threshold exceeded (>70%)
+          if (isBurntOut) {
+            console.log(`⚠️ Detected burnout for ${memberName}: wellbeing=${wellbeingScore}, stress=${stressLevel}, exhausted=${isExhausted}`);
+            
+            // Check if we already sent this notification recently (last 24 hours)
+            const notificationsRef = collection(db, 'notifications');
+            const existingQuery = query(
+              notificationsRef,
+              where('userId', '==', user.id),
+              where('burnoutMemberId', '==', memberId),
+              where('type', '==', 'supervisor_burnout_alert')
+            );
+            
+            const existingSnapshot = await getDocs(existingQuery);
+            let shouldCreateNotification = true;
+            
+            // Check if any existing notification is less than 24 hours old
+            existingSnapshot.forEach((doc) => {
+              const notifData = doc.data();
+              const notifTime = new Date(notifData.timestamp).getTime();
+              const hoursSince = (now - notifTime) / (1000 * 60 * 60);
+              
+              if (hoursSince < 24) {
+                shouldCreateNotification = false;
+              }
+            });
+            
+            if (shouldCreateNotification) {
+              // Create in-app notification for supervisor
+              await addDoc(collection(db, 'notifications'), {
+                userId: user.id,
+                message: `${memberName} is experiencing ${isExhausted ? 'exhaustion' : stressLevel === 'high' ? 'high stress' : 'low wellbeing'} (Wellbeing: ${wellbeingScore}/100, Burnout Risk: ${burnoutRisk}%). Immediate attention recommended.`,
+                severity: burnoutRisk > 80 ? 'error' : 'warning',
+                timestamp: new Date().toISOString(),
+                read: false,
+                burnoutMemberId: memberId,
+                burnoutMemberName: memberName,
+                burnoutMemberEmail: memberEmail,
+                burnoutRisk: burnoutRisk,
+                wellbeingScore: wellbeingScore,
+                stressLevel: stressLevel,
+                isExhausted: isExhausted,
+                type: 'supervisor_burnout_alert',
+                actionable: true,
+              });
+              
+              console.log(`✅ Created in-app notification for supervisor about ${memberName}`);
+            } else {
+              console.log(`ℹ️ Notification already exists for ${memberName} (less than 24h old)`);
+            }
+          }
+          
+          // CHECK 2: Burnout threshold exceeded (>70%)
           if (burnoutRisk > 70) {
             await sendBurnoutThresholdEmail(
               supervisorEmail,
@@ -87,7 +152,8 @@ export const BurnoutMonitoringService = () => {
             );
           }
           
-          // CHECK 2: 3rd overtime in the week
+          // CHECK 3: 3rd overtime in the week
+          const overtimeThisWeek = await getOvertimeThisWeek(memberId, weekStart);
           if (overtimeThisWeek >= 3) {
             await sendOvertimeAlertEmail(
               supervisorEmail,
@@ -99,8 +165,8 @@ export const BurnoutMonitoringService = () => {
           }
         }
         
-        // Mark that we monitored today
-        localStorage.setItem(monitoringCheckKey, 'true');
+        // Mark last check time
+        localStorage.setItem(lastCheckKey, now.toString());
         
         console.log(`✅ Burnout monitoring completed for Team ${supervisorTeamNumber}`);
       } catch (error) {
@@ -111,16 +177,10 @@ export const BurnoutMonitoringService = () => {
     // Run monitoring check on component mount
     monitorBurnoutLevels();
     
-    // Also run daily at midnight (optional - could use a cron job instead)
-    const midnightCheck = setInterval(() => {
-      const now = new Date();
-      if (now.getHours() === 0 && now.getMinutes() === 0) {
-        localStorage.removeItem(`burnout_monitoring_${user?.id}_${new Date().toISOString().split('T')[0]}`);
-        monitorBurnoutLevels();
-      }
-    }, 60000); // Check every minute
+    // Re-run every 5 minutes
+    const interval = setInterval(monitorBurnoutLevels, 5 * 60 * 1000);
 
-    return () => clearInterval(midnightCheck);
+    return () => clearInterval(interval);
   }, [user]);
 
   return null; // No UI

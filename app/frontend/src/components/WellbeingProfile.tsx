@@ -6,11 +6,10 @@ import {
   Avatar,
   Paper,
   CircularProgress,
+  Chip,
 } from '@mui/material';
 import {
   VideoCall,
-  Chat,
-  Assignment,
   AccessTime,
   TrendingUp,
   Speed,
@@ -68,8 +67,8 @@ export const WellbeingProfile = () => {
   const wellbeingScore = testScenario?.wellbeingScore ?? analytics?.wellbeingScore ?? generateValue(3, 50, 90);
   const meetingHours = analytics?.meetingHours ?? generateValue(5, 8, 18);
   const meetingCount = analytics?.meetingCount ?? generateValue(6, 12, 25);
-  const messagesSent = analytics?.messagesSent ?? generateValue(7, 150, 300);
-  const messagesReceived = analytics?.messagesReceived ?? generateValue(8, 120, 250);
+//  const messagesSent = analytics?.messagesSent ?? generateValue(7, 150, 300);
+ //const messagesReceived = analytics?.messagesReceived ?? generateValue(8, 120, 250);
   const earlyStarts = analytics?.earlyStarts ?? generateValue(9, 0, 4);
   const lateExits = analytics?.lateExits ?? generateValue(10, 0, 3);
   const lateStarts = analytics?.lateStarts ?? generateValue(11, 0, 2);
@@ -81,28 +80,39 @@ export const WellbeingProfile = () => {
   const efficiency = analytics?.efficiency ?? Math.round((taskCompletionRate + Math.min(100, (loggedHours / 40) * 100)) / 2);
 
   return (
-    <Box sx={{ maxWidth: 1400, mx: 'auto', p: 3 }}>
+    <Box sx={{ width: '100%', p: 3 }}>
       {/* Score Cards - Square boxes with circular progress */}
       <Box
         sx={{
           display: 'grid',
-          gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' },
-          gap: 3,
+          gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr', lg: 'repeat(3, 1fr)' },
+          gap: 4,
           mb: 4,
         }}
       >
         {/* Wellbeing Score Card */}
-        <Card sx={{ boxShadow: 3, borderRadius: 2 }}>
+        <Card sx={{ boxShadow: 2, borderRadius: 2, border: '1px solid #e0e0e0' }}>
           <CardContent sx={{ p: 3 }}>
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <Box sx={{ position: 'relative', display: 'inline-flex', mb: 2 }}>
+                <CircularProgress
+                  variant="determinate"
+                  value={100}
+                  size={120}
+                  thickness={4}
+                  sx={{
+                    color: '#e0e0e0',
+                  }}
+                />
                 <CircularProgress
                   variant="determinate"
                   value={wellbeingScore}
                   size={120}
                   thickness={4}
                   sx={{
-                    color: '#f093fb',
+                    color: wellbeingScore >= 80 ? '#4caf50' : wellbeingScore >= 60 ? '#ff9800' : '#f44336',
+                    position: 'absolute',
+                    left: 0,
                     '& .MuiCircularProgress-circle': {
                       strokeLinecap: 'round',
                     },
@@ -120,33 +130,44 @@ export const WellbeingProfile = () => {
                     justifyContent: 'center',
                   }}
                 >
-                                    <Typography variant="h4" sx={{ fontWeight: 700, color: '#f093fb' }}>
+                  <Typography variant="h4" sx={{ fontWeight: 700, color: '#2c3e50' }}>
                     {wellbeingScore}
                   </Typography>
                 </Box>
               </Box>
-              <Typography variant="h6" sx={{ fontWeight: 700, mb: 1, textAlign: 'center' }}>
+              <Typography variant="h6" sx={{ fontWeight: 600, mb: 1, textAlign: 'center', color: '#2c3e50' }}>
                 Wellbeing Score
               </Typography>
-              <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center' }}>
-                Overall wellness based on workload, stress indicators, and work-life balance
+              <Typography variant="body2" sx={{ color: '#7f8c8d', textAlign: 'center' }}>
+                Overall wellness based on work-life balance
               </Typography>
             </Box>
           </CardContent>
         </Card>
 
         {/* Burnout Risk Score Card */}
-        <Card sx={{ boxShadow: 3, borderRadius: 2 }}>
+        <Card sx={{ boxShadow: 2, borderRadius: 2, border: '1px solid #e0e0e0' }}>
           <CardContent sx={{ p: 3 }}>
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <Box sx={{ position: 'relative', display: 'inline-flex', mb: 2 }}>
+                <CircularProgress
+                  variant="determinate"
+                  value={100}
+                  size={120}
+                  thickness={4}
+                  sx={{
+                    color: '#e0e0e0',
+                  }}
+                />
                 <CircularProgress
                   variant="determinate"
                   value={burnoutRisk}
                   size={120}
                   thickness={4}
                   sx={{
-                    color: '#fa709a',
+                    color: burnoutRisk > 70 ? '#f44336' : burnoutRisk > 40 ? '#ff9800' : '#4caf50',
+                    position: 'absolute',
+                    left: 0,
                     '& .MuiCircularProgress-circle': {
                       strokeLinecap: 'round',
                     },
@@ -164,33 +185,50 @@ export const WellbeingProfile = () => {
                     justifyContent: 'center',
                   }}
                 >
-                  <Typography variant="h4" sx={{ fontWeight: 700, color: '#fa709a' }}>
+                  <Typography variant="h4" sx={{ fontWeight: 700, color: '#2c3e50' }}>
                     {burnoutRisk}
                   </Typography>
                 </Box>
               </Box>
-              <Typography variant="h6" sx={{ fontWeight: 700, mb: 1, textAlign: 'center' }}>
-                Burnout Risk Score
+              <Typography variant="h6" sx={{ fontWeight: 600, mb: 1, textAlign: 'center', color: '#2c3e50' }}>
+                Burnout Risk
               </Typography>
-              <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center' }}>
-                {burnoutRisk < 40 ? 'Low risk - Your current workload and stress levels are manageable' : burnoutRisk < 70 ? 'Moderate risk - Consider balancing your workload' : 'High risk - Please take care of your wellbeing'}
-              </Typography>
+              <Chip 
+                label={burnoutRisk < 40 ? 'Low Risk' : burnoutRisk < 70 ? 'Moderate Risk' : 'High Risk'}
+                size="small"
+                sx={{ 
+                  bgcolor: burnoutRisk < 40 ? '#e8f5e9' : burnoutRisk < 70 ? '#fff3e0' : '#ffebee',
+                  color: burnoutRisk < 40 ? '#2e7d32' : burnoutRisk < 70 ? '#e65100' : '#c62828',
+                  fontWeight: 600,
+                }}
+              />
             </Box>
           </CardContent>
         </Card>
 
         {/* Efficiency Score Card */}
-        <Card sx={{ boxShadow: 3, borderRadius: 2 }}>
+        <Card sx={{ boxShadow: 2, borderRadius: 2, border: '1px solid #e0e0e0' }}>
           <CardContent sx={{ p: 3 }}>
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <Box sx={{ position: 'relative', display: 'inline-flex', mb: 2 }}>
+                <CircularProgress
+                  variant="determinate"
+                  value={100}
+                  size={120}
+                  thickness={4}
+                  sx={{
+                    color: '#e0e0e0',
+                  }}
+                />
                 <CircularProgress
                   variant="determinate"
                   value={efficiency}
                   size={120}
                   thickness={4}
                   sx={{
-                    color: '#667eea',
+                    color: efficiency >= 80 ? '#4caf50' : efficiency >= 60 ? '#ff9800' : '#f44336',
+                    position: 'absolute',
+                    left: 0,
                     '& .MuiCircularProgress-circle': {
                       strokeLinecap: 'round',
                     },
@@ -208,16 +246,16 @@ export const WellbeingProfile = () => {
                     justifyContent: 'center',
                   }}
                 >
-                  <Typography variant="h4" sx={{ fontWeight: 700, color: '#667eea' }}>
+                  <Typography variant="h4" sx={{ fontWeight: 700, color: '#2c3e50' }}>
                     {efficiency}
                   </Typography>
                 </Box>
               </Box>
-              <Typography variant="h6" sx={{ fontWeight: 700, mb: 1, textAlign: 'center' }}>
-                Overall Efficiency Score
+              <Typography variant="h6" sx={{ fontWeight: 600, mb: 1, textAlign: 'center', color: '#2c3e50' }}>
+                Efficiency Score
               </Typography>
-              <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center' }}>
-                Based on task completion and logged hours
+              <Typography variant="body2" sx={{ color: '#7f8c8d', textAlign: 'center' }}>
+                Based on task completion and hours
               </Typography>
             </Box>
           </CardContent>
@@ -231,8 +269,8 @@ export const WellbeingProfile = () => {
       <Box
         sx={{
           display: 'grid',
-          gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', lg: 'repeat(5, 1fr)' },
-          gap: 2,
+          gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(5, 1fr)' },
+          gap: 3,
           mb: 4,
         }}
       >
@@ -242,8 +280,8 @@ export const WellbeingProfile = () => {
               value: meetingHours,
               unit: 'hrs/week',
               icon: <VideoCall />,
-              color: '#3498db',
-              bgColor: '#3498db15',
+              color: '#1976d2',
+              bgColor: '#e3f2fd',
               description: 'Time in meetings',
             },
             {
@@ -251,44 +289,17 @@ export const WellbeingProfile = () => {
               value: meetingCount,
               unit: 'meetings/week',
               icon: <VideoCall />,
-              color: '#e74c3c',
-              bgColor: '#e74c3c15',
+              color: '#1976d2',
+              bgColor: '#e3f2fd',
               description: 'Meetings attended',
-            },
-            {
-              title: 'Messages Sent',
-              value: messagesSent,
-              unit: 'msgs/week',
-              icon: <Chat />,
-              color: '#2ecc71',
-              bgColor: '#2ecc7115',
-              description: 'Messages sent',
-            },
-            {
-              title: 'Messages Received',
-              value: messagesReceived,
-              unit: 'msgs/week',
-              icon: <Chat />,
-              color: '#f39c12',
-              bgColor: '#f39c1215',
-              description: 'Messages received',
-            },
-            {
-              title: 'Task Completion',
-              value: taskCompletionRate,
-              unit: '%',
-              icon: <Assignment />,
-              color: '#9b59b6',
-              bgColor: '#9b59b615',
-              description: 'Completion rate',
             },
             {
               title: 'Logged Hours',
               value: loggedHours,
               unit: 'hrs/week',
               icon: <AccessTime />,
-              color: '#1abc9c',
-              bgColor: '#1abc9c15',
+              color: '#7b1fa2',
+              bgColor: '#f3e5f5',
               description: 'Hours logged',
             },
             {
@@ -296,8 +307,8 @@ export const WellbeingProfile = () => {
               value: earlyStarts,
               unit: 'days/week',
               icon: <Login />,
-              color: '#27ae60',
-              bgColor: '#27ae6015',
+              color: '#388e3c',
+              bgColor: '#e8f5e9',
               description: 'Started early',
             },
             {
@@ -305,8 +316,8 @@ export const WellbeingProfile = () => {
               value: lateExits,
               unit: 'days/week',
               icon: <Logout />,
-              color: '#16a085',
-              bgColor: '#16a08515',
+              color: '#7b1fa2',
+              bgColor: '#f3e5f5',
               description: 'Left late',
             },
             {
@@ -341,33 +352,26 @@ export const WellbeingProfile = () => {
               key={index}
               sx={{
                 p: 2.5,
-                borderRadius: 2,
-                boxShadow: 1,
+                borderRadius: 3,
+                boxShadow: 2,
+                background: metric.bgColor,
                 transition: 'all 0.3s ease',
                 '&:hover': {
-                  boxShadow: 3,
-                  transform: 'translateY(-4px)',
+                  boxShadow: 6,
+                  transform: 'translateY(-6px)',
                 },
                 position: 'relative',
                 overflow: 'hidden',
-                '&::before': {
-                  content: '""',
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  height: '4px',
-                  bgcolor: metric.color,
-                },
               }}
             >
               <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
                 <Avatar
                   sx={{
-                    width: 48,
-                    height: 48,
-                    bgcolor: metric.bgColor,
+                    width: 56,
+                    height: 56,
+                    bgcolor: 'rgba(255,255,255,0.9)',
                     color: metric.color,
+                    boxShadow: 2,
                   }}
                 >
                   {metric.icon}
@@ -430,7 +434,7 @@ export const WellbeingProfile = () => {
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography variant="body2">Net Ratio</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 600, color: '#3498db' }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: '#1976d2' }}>
                     1.31x
                   </Typography>
                 </Box>
@@ -438,7 +442,7 @@ export const WellbeingProfile = () => {
             </CardContent>
           </Card>
 
-          <Card sx={{ boxShadow: 1 }}>
+          <Card sx={{ boxShadow: 1, border: '1px solid #e0e0e0' }}>
             <CardContent>
               <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2 }}>
                 Time Management
@@ -458,7 +462,7 @@ export const WellbeingProfile = () => {
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography variant="body2">Deep Work Time</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 600, color: '#2ecc71' }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: '#4caf50' }}>
                     26h (68%)
                   </Typography>
                 </Box>
@@ -466,7 +470,7 @@ export const WellbeingProfile = () => {
             </CardContent>
           </Card>
 
-          <Card sx={{ boxShadow: 1 }}>
+          <Card sx={{ boxShadow: 1, border: '1px solid #e0e0e0' }}>
             <CardContent>
               <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2 }}>
                 Attendance Patterns
@@ -474,19 +478,19 @@ export const WellbeingProfile = () => {
               <Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1.5 }}>
                   <Typography variant="body2">Early Starts</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 600, color: '#27ae60' }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: '#4caf50' }}>
                     3 days
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1.5 }}>
                   <Typography variant="body2">Late Starts</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 600, color: '#e67e22' }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: '#ff9800' }}>
                     1 day
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography variant="body2">On-Time %</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 600, color: '#2ecc71' }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: '#4caf50' }}>
                     80%
                   </Typography>
                 </Box>
@@ -495,64 +499,7 @@ export const WellbeingProfile = () => {
           </Card>
       </Box>
 
-      {/* Insights */}
-      <Box sx={{ mt: 3 }}>
-        <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
-          Key Insights
-        </Typography>
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' },
-            gap: 2,
-          }}
-        >
-            <Paper
-              sx={{
-                p: 2,
-                borderLeft: '4px solid #2ecc71',
-                bgcolor: '#2ecc7110',
-              }}
-            >
-              <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
-                Strong Performance
-              </Typography>
-              <Typography variant="caption" sx={{ color: '#7f8c8d' }}>
-                92% task completion rate shows excellent productivity
-              </Typography>
-            </Paper>
 
-            <Paper
-              sx={{
-                p: 2,
-                borderLeft: '4px solid #3498db',
-                bgcolor: '#3498db10',
-              }}
-            >
-              <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
-                Meeting Heavy
-              </Typography>
-              <Typography variant="caption" sx={{ color: '#7f8c8d' }}>
-                32% of time in meetings - consider batching for deep work
-              </Typography>
-            </Paper>
-
-            <Paper
-              sx={{
-                p: 2,
-                borderLeft: '4px solid #f39c12',
-                bgcolor: '#f39c1210',
-              }}
-            >
-              <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
-                Communicative
-              </Typography>
-              <Typography variant="caption" sx={{ color: '#7f8c8d' }}>
-          245 messages sent - actively engaging with your team
-        </Typography>
-      </Paper>
-    </Box>
-  </Box>
 </Box>
   );
 };

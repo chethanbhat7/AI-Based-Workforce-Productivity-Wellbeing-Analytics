@@ -1,28 +1,43 @@
-# Minimal requirements for Vercel deployment (fast build)
-# Use this for initial deployment, then add ML features later
-
 # FastAPI and server
 fastapi>=0.104.0
 uvicorn[standard]>=0.24.0
-python-multipart>=0.0.6
+gunicorn>=21.2.0
+python-multipart
 
 # Database
-sqlalchemy>=2.0.0
-psycopg2-binary>=2.9.9
+sqlalchemy
+psycopg2-binary
+alembic
 
 # HTTP client
-httpx>=0.25.0
+httpx
 
 # Security & Authentication
-cryptography>=41.0.0
-pydantic>=2.5.0
-pydantic-settings>=2.1.0
-python-jose[cryptography]>=3.3.0
-passlib[bcrypt]>=1.7.4
+cryptography
+pydantic
+pydantic-settings
+python-jose[cryptography]
+passlib[bcrypt]
+
+# Background tasks
+celery
+redis
 
 # Utilities
-python-dotenv>=1.0.0
-python-dateutil>=2.8.2
+python-dotenv
+python-dateutil
 
 # Microsoft Graph
-msal>=1.25.0
+msal
+
+# ML / Data Science
+numpy
+pandas
+scikit-learn
+xgboost
+joblib
+
+# Development
+pytest
+pytest-asyncio
+pydantic[email]

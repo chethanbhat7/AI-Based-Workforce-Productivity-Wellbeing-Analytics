@@ -213,10 +213,26 @@ export const ColleagueCheckDialog = ({ open, onClose }: ColleagueCheckDialogProp
       onClose={handleClose}
       maxWidth="md"
       fullWidth
+      TransitionProps={{
+        timeout: 400,
+      }}
       PaperProps={{
         sx: {
           borderRadius: 2,
           boxShadow: 3,
+          animation: 'slideIn 0.4s ease-out',
+        },
+      }}
+      sx={{
+        '@keyframes slideIn': {
+          '0%': {
+            opacity: 0,
+            transform: 'translateY(-30px) scale(0.95)',
+          },
+          '100%': {
+            opacity: 1,
+            transform: 'translateY(0) scale(1)',
+          },
         },
       }}
     >

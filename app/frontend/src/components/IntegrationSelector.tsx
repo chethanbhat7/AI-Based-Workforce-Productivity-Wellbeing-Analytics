@@ -166,10 +166,26 @@ export const IntegrationSelector = ({
       onClose={onClose}
       maxWidth="md"
       fullWidth
+      TransitionProps={{
+        timeout: 400,
+      }}
       PaperProps={{
         sx: {
           borderRadius: 2,
           maxHeight: '90vh',
+          animation: 'slideIn 0.4s ease-out',
+        },
+      }}
+      sx={{
+        '@keyframes slideIn': {
+          '0%': {
+            opacity: 0,
+            transform: 'translateY(-30px) scale(0.95)',
+          },
+          '100%': {
+            opacity: 1,
+            transform: 'translateY(0) scale(1)',
+          },
         },
       }}
     >

@@ -1,0 +1,47 @@
+# Exclude from Render deployment
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Model files (too large for free tier)
+model/
+*.pkl
+*.joblib
+*.h5
+*.pb
+
+# Development
+.env
+.env.local
+.vscode/
+.idea/
+*.log
+*.db
+*.sqlite
+
+# Git
+.git/
+.gitignore
+
+# Jupyter
+*.ipynb
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Frontend build (will be rebuilt)
+app/frontend/node_modules/
+app/frontend/dist/
