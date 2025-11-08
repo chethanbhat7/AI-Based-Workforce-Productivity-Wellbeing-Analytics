@@ -7,15 +7,18 @@ import {
   Paper,
   CircularProgress,
   Chip,
-} from '@mui/material';
-import {
+} 
+
+from '@mui/material' import {
   VideoCall,
   AccessTime,
   TrendingUp,
   Speed,
   Login,
   Logout,
-} from '@mui/icons-material';
+};
+
+from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { generateConsistentValue, getTestScenarioValues } from '../utils/consistentValues';
 
